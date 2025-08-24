@@ -54,7 +54,7 @@ const CreatePage = () => {
             </div>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="mt-6 flex justify-end">
           <Button type="submit">Create</Button>
         </CardFooter>
       </form>
