@@ -1,10 +1,10 @@
+import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import PrimaryButton from '@/ui/Button/PrimaryButton'
 
 export default function Home() {
   return (
     <Link href="/create">
-      <PrimaryButton>Add New Entry</PrimaryButton>
+      <Button>Add New Entry</Button>
     </Link>
   )
 }
