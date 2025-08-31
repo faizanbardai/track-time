@@ -1,6 +1,6 @@
 'use client'
 
-import { SubmitHandler, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -12,17 +12,12 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-
-type Inputs = {
-  title: string
-  date: string
-  time: string
-}
+import { EventFormData, useCreate } from '@/app/create/useCreate'
 
 const CreatePage = () => {
-  const { register, handleSubmit } = useForm<Inputs>()
+  const { register, handleSubmit } = useForm<EventFormData>()
 
-  const onSubmit: SubmitHandler<Inputs> = (data) => console.log(data)
+  const { onSubmit } = useCreate()
 
   return (
     <Card>
