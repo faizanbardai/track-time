@@ -12,7 +12,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { EventFormData, useCreate } from '@/app/create/useCreate'
+import { useCreate } from '@/app/create/useCreate'
+import { EventFormData } from '@/types/event'
 
 const CreatePage = () => {
   const { register, handleSubmit } = useForm<EventFormData>()
