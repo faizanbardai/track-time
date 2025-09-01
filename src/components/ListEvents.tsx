@@ -4,10 +4,12 @@ import { useIndexedDB } from '@/components/providers/indexedDB'
 import { Card } from '@/components/ui/card'
 import { fetchEventsFromIndexedDB } from '@/helpers/indexedDB/fetchEventsFromIndexedDB'
 import { Event } from '@/types/event'
+import { useRouter } from 'next/navigation'
 
 import { useEffect, useState } from 'react'
 
 export const ListEvents = () => {
+  const router = useRouter()
   const [events, setEvents] = useState<Event[]>([])
   const { dbReady } = useIndexedDB()
 
@@ -16,6 +18,12 @@ export const ListEvents = () => {
       fetchEventsFromIndexedDB().then(setEvents)
     }
   }, [dbReady])
+
+  useEffect(() => {
+    if (dbReady && events.length === 0) {
+      router.push('/create')
+    }
+  }, [dbReady, events.length, router])
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
