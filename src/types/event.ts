@@ -1,8 +1,7 @@
-export type Event = {
+export interface Event {
   id: string
   title: string
-  date: string
-  time: string
+  datetime: string
   createdAt: string
   updatedAt: string
 }

@@ -3,16 +3,21 @@ import { SubmitHandler } from 'react-hook-form'
 import { Event, EventFormData } from '@/types/event'
 import { saveEventToIndexedDB } from '@/helpers/indexedDB/saveEventToIndexedDB'
 import { useRouter } from 'next/navigation'
+import dayjs from 'dayjs'
 
 export const useCreate = () => {
   const router = useRouter()
 
-  const onSubmit: SubmitHandler<EventFormData> = async (data) => {
+  const onSubmit: SubmitHandler<
+    EventFormData & { date: string; time: string }
+  > = async ({ date, time, title }) => {
+    const datetime = dayjs(`${date}T${time}`).toISOString()
     const newEvent: Event = {
       id: uuid(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      ...data,
+      title,
+      datetime,
+      createdAt: dayjs().toISOString(),
+      updatedAt: dayjs().toISOString(),
     }
     try {
       await saveEventToIndexedDB(newEvent)
