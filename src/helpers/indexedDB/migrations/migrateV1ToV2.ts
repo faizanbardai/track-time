@@ -1,7 +1,8 @@
+import { EVENTS_STORE } from '@/constants/indexedDB'
 import dayjs from 'dayjs'
 
-export const migrateV1ToV2 = (tx: IDBTransaction, storeName: string) => {
-  const store = tx.objectStore(storeName)
+export const migrateV1ToV2 = (tx: IDBTransaction) => {
+  const store = tx.objectStore(EVENTS_STORE)
   store.openCursor().onsuccess = (e) => {
     const cursor = (e.target as IDBRequest<IDBCursorWithValue>).result
     if (!cursor) return

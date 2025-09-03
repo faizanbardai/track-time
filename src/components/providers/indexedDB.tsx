@@ -35,7 +35,7 @@ export const IndexedDBProvider: React.FC<{ children: React.ReactNode }> = ({
       else if (event.oldVersion < 2) {
         const tx = request.transaction
         if (!tx) return
-        migrateV1ToV2(tx, EVENTS_STORE)
+        migrateV1ToV2(tx)
       }
     }
 
