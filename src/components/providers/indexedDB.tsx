@@ -2,6 +2,7 @@
 
 import { DB_NAME, DB_VERSION, EVENTS_STORE } from '@/constants/indexedDB'
 import { migrateV1ToV2 } from '@/helpers/indexedDB/migrations/migrateV1ToV2'
+import { migrateV2ToV3 } from '@/helpers/indexedDB/migrations/migrateV2ToV3'
 import React, { createContext, useContext, useEffect, useState } from 'react'
 
 export type IndexedDBContextType = {
@@ -31,11 +32,20 @@ export const IndexedDBProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!db.objectStoreNames.contains(EVENTS_STORE)) {
         db.createObjectStore(EVENTS_STORE, { keyPath: 'id' })
       }
-      // Migration: v1 -> v2
-      else if (event.oldVersion < 2) {
-        const tx = request.transaction
-        if (!tx) return
+
+      const tx = request.transaction
+      if (!tx) return
+
+      let oldVersion = event.oldVersion
+
+      if (oldVersion < 2) {
         migrateV1ToV2(tx)
+        oldVersion = 2
+      }
+
+      if (oldVersion < 3) {
+        migrateV2ToV3(tx)
+        oldVersion = 3
       }
     }
 
