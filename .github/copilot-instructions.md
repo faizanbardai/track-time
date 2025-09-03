@@ -2,7 +2,7 @@
 
 ### Project Overview
 
-This is a Next.js application for tracking time and events. It uses TypeScript, Tailwind CSS, and several modern React libraries for UI and state management.
+This is a Next.js application for tracking time and events. It uses TypeScript, Tailwind CSS, several modern React libraries for UI and state management, and IndexedDB as the client-side database.
 
 ### Tech Stack
 
