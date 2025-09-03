@@ -1,8 +1,7 @@
 'use client'
 
-import { Counter } from '@/components/Counter'
+import { ListEvent } from '@/components/ListEvent'
 import { useIndexedDB } from '@/components/providers/indexedDB'
-import { Card } from '@/components/ui/card'
 import { fetchEventsFromIndexedDB } from '@/helpers/indexedDB/fetchEventsFromIndexedDB'
 import { Event } from '@/types/event'
 import { useRouter } from 'next/navigation'
@@ -39,17 +38,9 @@ export const ListEvents = () => {
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
+    <div className="grid grid-cols-1 gap-4 py-2">
       {events.map((event) => (
-        <Card
-          key={event.id}
-          className="flex flex-col gap-2 p-6 shadow-lg border border-border bg-card hover:shadow-xl transition-shadow"
-        >
-          <h3 className="text-lg font-semibold text-primary mb-1">
-            {event.title}
-          </h3>
-          <Counter eventDatetime={event.datetime} />
-        </Card>
+        <ListEvent key={event.id} event={event} />
       ))}
     </div>
   )

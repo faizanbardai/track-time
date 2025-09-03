@@ -1,8 +1,14 @@
 import { TimeDiff } from '@/types/datetimeDiff'
+import { Event } from '@/types/event'
 import dayjs from 'dayjs'
 
-export const calculateTimeDiff = (past: string, now = dayjs()): TimeDiff => {
+export const calculateTimeDiff = (
+  event: Event,
+  past: string = event.datetime,
+  now = dayjs(),
+): TimeDiff => {
   const pastDatetime = dayjs(past)
+  let cursor = dayjs(past)
   const diff = now.diff(pastDatetime)
 
   if (diff === 0) {
@@ -10,15 +16,20 @@ export const calculateTimeDiff = (past: string, now = dayjs()): TimeDiff => {
   }
 
   if (diff <= 0) {
-    return calculateTimeDiff(now.toString(), pastDatetime)
+    return calculateTimeDiff(event, now.toString(), pastDatetime)
   }
 
-  const years = now.diff(pastDatetime, 'year')
-  const months = now.diff(pastDatetime, 'month') % 12
-  const days = now.diff(pastDatetime, 'day') % 30
-  const hours = now.diff(pastDatetime, 'hour') % 24
-  const minutes = now.diff(pastDatetime, 'minute') % 60
-  const seconds = now.diff(pastDatetime, 'second') % 60
+  const years = now.diff(cursor, 'year')
+  if (event.years && years > 0) cursor = cursor.add(years, 'year')
+  const months = now.diff(cursor, 'month')
+  if (event.months && months > 0) cursor = cursor.add(months, 'month')
+  const days = now.diff(cursor, 'day')
+  if (event.days && days > 0) cursor = cursor.add(days, 'day')
+  const hours = now.diff(cursor, 'hour')
+  if (event.hours && hours > 0) cursor = cursor.add(hours, 'hour')
+  const minutes = now.diff(cursor, 'minute')
+  if (event.minutes && minutes > 0) cursor = cursor.add(minutes, 'minute')
+  const seconds = now.diff(cursor, 'second')
 
   return { years, months, days, hours, minutes, seconds }
 }
