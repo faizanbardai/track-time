@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import dayjs from 'dayjs'
 import { calculateTimeDiff } from '@/helpers/datetime/calculateTimeDiff'
 import { Event } from '@/types/event'
 
