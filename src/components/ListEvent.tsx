@@ -8,12 +8,18 @@ import {
 } from '@/components/ui/card'
 import { Event } from '@/types/event'
 import dayjs from 'dayjs'
+import { useRouter } from 'next/navigation'
 
 export const ListEvent = ({ event }: { event: Event }) => {
+  const router = useRouter()
   const displayEventDatetime = dayjs(event.datetime).format('DD MMM YYYY HH:mm')
 
+  const handleClick = () => {
+    router.push(`/event/${event.id}`)
+  }
+
   return (
-    <Card className="">
+    <Card className="cursor-pointer hover:bg-accent" onClick={handleClick}>
       <CardHeader>
         <CardTitle>{event.title}</CardTitle>
       </CardHeader>

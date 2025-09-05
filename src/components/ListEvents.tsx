@@ -2,7 +2,7 @@
 
 import { ListEvent } from '@/components/ListEvent'
 import { useIndexedDB } from '@/components/providers/indexedDB'
-import { fetchEventsFromIndexedDB } from '@/helpers/indexedDB/fetchEventsFromIndexedDB'
+import { fetchAllEvents } from '@/helpers/indexedDB'
 import { Event } from '@/types/event'
 import { useRouter } from 'next/navigation'
 
@@ -17,7 +17,7 @@ export const ListEvents = () => {
   useEffect(() => {
     if (dbReady) {
       setLoading(true)
-      fetchEventsFromIndexedDB()
+      fetchAllEvents()
         .then(setEvents)
         .finally(() => setLoading(false))
     }
@@ -25,7 +25,7 @@ export const ListEvents = () => {
 
   useEffect(() => {
     if (dbReady && !loading && events.length === 0) {
-      router.push('/create')
+      router.push('/event')
     }
   }, [dbReady, loading, events.length, router])
 
