@@ -5,7 +5,7 @@ import Link from 'next/link'
 export default function Home() {
   return (
     <>
-      <Link href="/create">
+      <Link href="/event">
         <Button>Add New Entry</Button>
       </Link>
       <ListEvents />

@@ -13,6 +13,7 @@ export interface Event {
 }
 
 export type EventFormData = {
+  id?: string
   title: string
   date: string
   time: string
