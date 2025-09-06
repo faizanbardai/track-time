@@ -1,4 +1,4 @@
-import { ListEvents } from '@/components/ListEvents'
+import { ListEvents } from '@/components/Event/ListEvents'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 

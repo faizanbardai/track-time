@@ -3,7 +3,7 @@ import React from 'react'
 import { useEffect, useState } from 'react'
 import { Event } from '@/types/event'
 import { fetchEventById } from '@/helpers/indexedDB'
-import EventPage from '@/app/event/page'
+import CreateOrUpdateEvent from '@/components/Event/CreateOrUpdateEvent'
 
 interface EventPageProps {
   params: Promise<{ eventId: string }>
@@ -31,7 +31,7 @@ const SingleEventPage = ({ params }: EventPageProps) => {
   if (error) return <div className="text-red-500">{error}</div>
   if (!event) return <div>Event not found</div>
 
-  return <EventPage event={event} />
+  return <CreateOrUpdateEvent event={event} />
 }
 
 export default SingleEventPage

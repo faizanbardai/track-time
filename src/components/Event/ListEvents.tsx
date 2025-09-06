@@ -1,6 +1,6 @@
 'use client'
 
-import { ListEvent } from '@/components/ListEvent'
+import { ListEvent } from '@/components/Event/ListEvent'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { fetchAllEvents } from '@/helpers/indexedDB'
 import { Event } from '@/types/event'
