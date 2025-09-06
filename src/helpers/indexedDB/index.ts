@@ -18,17 +18,18 @@ const openDB = (): Promise<IDBDatabase> => {
 /**
  * Attach transaction error handlers and close DB on error/abort
  */
+
 const handleTxErrors = (
   tx: IDBTransaction,
   db: IDBDatabase,
-  reject: (reason?: any) => void,
+  reject: (_reason: unknown) => void,
 ) => {
   tx.onabort = () => {
-    reject(tx.error || new Error('Transaction aborted'))
+    reject(tx.error ?? new Error('Transaction aborted'))
     db.close()
   }
   tx.onerror = () => {
-    reject(tx.error || new Error('Transaction error'))
+    reject(tx.error ?? new Error('Transaction error'))
     db.close()
   }
 }

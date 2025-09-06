@@ -18,8 +18,12 @@ const DeleteEvent = ({ eventId }: DeleteEventProps) => {
     try {
       await deleteEventById(eventId)
       router.push('/')
-    } catch (err: any) {
-      setError(err?.message || 'Failed to delete event')
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Failed to delete event')
+      }
     } finally {
       setLoading(false)
     }
