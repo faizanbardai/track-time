@@ -1,32 +1,25 @@
-import { DB_NAME, DB_VERSION, EVENTS_STORE } from '@/constants/indexedDB'
-import { migrateV1ToV2 } from '@/helpers/indexedDB/migrations/migrateV1ToV2'
-import { migrateV2ToV3 } from '@/helpers/indexedDB/migrations/migrateV2ToV3'
+import {
+  DB_NAME,
+  DB_VERSION,
+  EVENTS_STORE,
+  EVENT_ORDER_STORE,
+} from '@/constants/indexedDB'
 import { Event } from '@/types/event'
 
 export const createStoreAndRunMigrations = (
   request: IDBOpenDBRequest,
-  event: IDBVersionChangeEvent,
+  // event: IDBVersionChangeEvent,
 ) => {
   const db = request.result
-  // If store doesn't exist, create it (fresh install)
   if (!db.objectStoreNames.contains(EVENTS_STORE)) {
     db.createObjectStore(EVENTS_STORE, { keyPath: 'id' })
+  }
+  if (!db.objectStoreNames.contains(EVENT_ORDER_STORE)) {
+    db.createObjectStore(EVENT_ORDER_STORE, { keyPath: 'id' })
   }
 
   const tx = request.transaction
   if (!tx) return
-
-  let oldVersion = event.oldVersion
-
-  if (oldVersion < 2) {
-    migrateV1ToV2(tx)
-    oldVersion = 2
-  }
-
-  if (oldVersion < 3) {
-    migrateV2ToV3(tx)
-    oldVersion = 3
-  }
 }
 
 /**
@@ -36,8 +29,8 @@ export const createStoreAndRunMigrations = (
 export const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
-    request.onupgradeneeded = (event) => {
-      createStoreAndRunMigrations(request, event)
+    request.onupgradeneeded = () => {
+      createStoreAndRunMigrations(request)
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error)
@@ -74,9 +67,23 @@ export const fetchAllEvents = async (): Promise<Event[]> => {
     handleTxErrors(tx, db, reject)
     const store = tx.objectStore(EVENTS_STORE)
     const allEventsRequest = store.getAll()
-    allEventsRequest.onsuccess = () => {
-      resolve(allEventsRequest.result)
+    allEventsRequest.onsuccess = async () => {
+      const events: Event[] = allEventsRequest.result
       db.close()
+      try {
+        const order = await getEventOrder()
+        // Sort events by order array, fallback to unsorted for missing ids
+        const eventMap = new Map(events.map((e) => [e.id, e]))
+        const sortedEvents = order
+          .map((id) => eventMap.get(id))
+          .filter(Boolean) as Event[]
+        // Add any events not in order to the end
+        const remaining = events.filter((e) => !order.includes(e.id))
+        resolve([...sortedEvents, ...remaining])
+      } catch (err: Error | unknown) {
+        console.error('Error fetching event order:', err)
+        resolve(events)
+      }
     }
     allEventsRequest.onerror = () => {
       reject(allEventsRequest.error)
@@ -116,8 +123,9 @@ export const fetchEventById = async (
 export const saveEvent = async (event: Event): Promise<IDBValidKey> => {
   // Try to preserve createdAt if updating an existing event
   const eventToSave = { ...event }
+  let existing: Event | null = null
   if (event.id) {
-    const existing = await fetchEventById(event.id)
+    existing = await fetchEventById(event.id)
     if (existing && existing.createdAt) {
       eventToSave.createdAt = existing.createdAt
     }
@@ -128,9 +136,12 @@ export const saveEvent = async (event: Event): Promise<IDBValidKey> => {
     handleTxErrors(tx, db, reject)
     const store = tx.objectStore(EVENTS_STORE)
     const putRequest = store.put(eventToSave)
-    putRequest.onsuccess = () => {
+    putRequest.onsuccess = async () => {
       resolve(putRequest.result)
       db.close()
+      if (!existing) {
+        await addEventToOrder(eventToSave.id)
+      }
     }
     putRequest.onerror = () => {
       reject(putRequest.error)
@@ -149,13 +160,81 @@ export const deleteEventById = async (eventId: string): Promise<void> => {
     handleTxErrors(tx, db, reject)
     const store = tx.objectStore(EVENTS_STORE)
     const deleteRequest = store.delete(eventId)
-    deleteRequest.onsuccess = () => {
+    deleteRequest.onsuccess = async () => {
       resolve()
       db.close()
+      await removeEventFromOrder(eventId)
     }
     deleteRequest.onerror = () => {
       reject(deleteRequest.error)
       db.close()
     }
   })
+}
+
+/**
+ * Fetch the event order array from EVENT_ORDER_STORE
+ */
+export const getEventOrder = async (): Promise<string[]> => {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(EVENT_ORDER_STORE, 'readonly')
+    handleTxErrors(tx, db, reject)
+    const store = tx.objectStore(EVENT_ORDER_STORE)
+    const getRequest = store.get('order')
+    getRequest.onsuccess = () => {
+      resolve(getRequest.result?.eventIds || [])
+      db.close()
+    }
+    getRequest.onerror = () => {
+      reject(getRequest.error)
+      db.close()
+    }
+  })
+}
+
+/**
+ * Set the event order array in EVENT_ORDER_STORE
+ */
+export const setEventOrder = async (eventIds: string[]): Promise<void> => {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(EVENT_ORDER_STORE, 'readwrite')
+    handleTxErrors(tx, db, reject)
+    const store = tx.objectStore(EVENT_ORDER_STORE)
+    const putRequest = store.put({ id: 'order', eventIds })
+    putRequest.onsuccess = () => {
+      resolve()
+      db.close()
+    }
+    putRequest.onerror = () => {
+      reject(putRequest.error)
+      db.close()
+    }
+  })
+}
+
+/**
+ * Add a new event ID to the event order array
+ */
+export const addEventToOrder = async (eventId: string): Promise<void> => {
+  const currentOrder = await getEventOrder()
+  currentOrder.push(eventId)
+  await setEventOrder(currentOrder)
+}
+
+/**
+ * Remove an event ID from the event order array
+ */
+export const removeEventFromOrder = async (eventId: string): Promise<void> => {
+  const currentOrder = await getEventOrder()
+  const newOrder = currentOrder.filter((id) => id !== eventId)
+  await setEventOrder(newOrder)
+}
+
+/**
+ * Update the event order array after a reorder
+ */
+export const updateEventOrder = async (eventIds: string[]): Promise<void> => {
+  await setEventOrder(eventIds)
 }
