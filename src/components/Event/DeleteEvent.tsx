@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { deleteEventById } from '@/helpers/indexedDB/index'
+import { deleteEvent } from '@/helpers/indexedDB/index'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -16,7 +16,7 @@ const DeleteEvent = ({ eventId }: DeleteEventProps) => {
     setLoading(true)
     setError(null)
     try {
-      await deleteEventById(eventId)
+      await deleteEvent(eventId)
       router.push('/')
     } catch (err: unknown) {
       if (err instanceof Error) {

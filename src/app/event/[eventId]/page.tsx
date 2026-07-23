@@ -2,7 +2,7 @@
 import React from 'react'
 import { useEffect, useState } from 'react'
 import { Event } from '@/types/event'
-import { fetchEventById } from '@/helpers/indexedDB'
+import { getEvent } from '@/helpers/indexedDB'
 import CreateOrUpdateEvent from '@/components/Event/CreateOrUpdateEvent'
 
 interface EventPageProps {
@@ -16,7 +16,7 @@ const SingleEventPage = ({ params }: EventPageProps) => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchEventById(eventId)
+    getEvent(eventId)
       .then((found) => {
         setEvent(found || null)
         setLoading(false)

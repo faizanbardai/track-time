@@ -25,7 +25,7 @@ interface EventPageProps {
 const getFormDefaultValues = (event: Event | null): EventFormData => {
   if (!event?.id) return getEventDefaultValues()
 
-  const { createdAt, updatedAt, datetime, ...rest } = event
+  const { createdAt, updatedAt, datetime, sortOrder, ...rest } = event
   return {
     ...rest,
     date: dayjs(datetime).format('YYYY-MM-DD'),

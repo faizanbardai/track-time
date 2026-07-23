@@ -1,6 +1,6 @@
 'use client'
 
-import { openDB } from '@/helpers/indexedDB'
+import { db } from '@/helpers/indexedDB'
 import React, { createContext, useContext, useEffect, useState } from 'react'
 
 export type IndexedDBContextType = {
@@ -21,7 +21,7 @@ export const IndexedDBProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    openDB()
+    db.open()
       .then(() => setDbReady(true))
       .catch((err: unknown) => {
         if (err && typeof err === 'object' && 'message' in err) {

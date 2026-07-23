@@ -1,9 +1,9 @@
 import { v4 as uuid } from 'uuid'
 import { SubmitHandler } from 'react-hook-form'
-import { Event, EventFormData } from '@/types/event'
+import { EventFormData } from '@/types/event'
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
-import { saveEvent } from '@/helpers/indexedDB'
+import { EventDraft, saveEvent } from '@/helpers/indexedDB'
 
 export const useEvent = () => {
   const router = useRouter()
@@ -23,7 +23,7 @@ export const useEvent = () => {
       years,
     } = eventFormData
     const datetime = dayjs(`${date}T${time}`).toISOString()
-    const newEventData: Event = {
+    const newEventData: EventDraft = {
       id: id || uuid(),
       title,
       datetime,
@@ -33,8 +33,6 @@ export const useEvent = () => {
       days,
       months,
       years,
-      createdAt: dayjs().toISOString(),
-      updatedAt: dayjs().toISOString(),
     }
     try {
       await saveEvent(newEventData)
