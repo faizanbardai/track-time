@@ -2,6 +2,7 @@ export interface Event {
   id: string
   title: string
   datetime: string
+  sortOrder: number
   seconds: boolean
   minutes: boolean
   hours: boolean

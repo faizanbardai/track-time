@@ -6,7 +6,7 @@ import {
   useSensors,
   DragEndEvent,
 } from '@dnd-kit/core'
-import { fetchAllEvents, setEventOrder } from '../../helpers/indexedDB'
+import { listEvents, reorderEvents } from '../../helpers/indexedDB'
 import { Event } from '../../types/event'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { useRouter } from 'next/navigation'
@@ -24,7 +24,7 @@ export const useListEvents = () => {
   useEffect(() => {
     if (dbReady) {
       setLoading(true)
-      fetchAllEvents()
+      listEvents()
         .then(setEvents)
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false))
@@ -58,8 +58,15 @@ export const useListEvents = () => {
     const oldIndex = events.findIndex((e) => String(e.id) === active.id)
     const newIndex = events.findIndex((e) => String(e.id) === over?.id)
     setEvents((items) => {
-      const ordered = arrayMove(items, oldIndex, newIndex)
-      setEventOrder(ordered.map((e) => e.id))
+      const ordered = arrayMove(items, oldIndex, newIndex).map(
+        (item, sortOrder) => ({
+          ...item,
+          sortOrder,
+        }),
+      )
+      reorderEvents(ordered.map((e) => e.id)).catch((err) => {
+        setError(err.message)
+      })
       return ordered
     })
   }
