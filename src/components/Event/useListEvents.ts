@@ -6,8 +6,13 @@ import {
   useSensors,
   DragEndEvent,
 } from '@dnd-kit/core'
-import { listEvents, reorderEvents } from '../../helpers/indexedDB'
-import { Event } from '../../types/event'
+import {
+  ALL_TAG_ID,
+  listEventsByTag,
+  listTags,
+  reorderEventsInTag,
+} from '../../helpers/indexedDB'
+import { EventWithTags, Tag } from '../../types/event'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { useRouter } from 'next/navigation'
 import { arrayMove } from '@dnd-kit/sortable'
@@ -17,25 +22,35 @@ export const useListEvents = () => {
   const router = useRouter()
   const { dbReady } = useIndexedDB()
 
-  const [events, setEvents] = useState<Event[]>([])
+  const [events, setEvents] = useState<EventWithTags[]>([])
+  const [tags, setTags] = useState<Tag[]>([])
+  const [activeTagId, setActiveTagId] = useState(ALL_TAG_ID)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (dbReady) {
       setLoading(true)
-      listEvents()
-        .then(setEvents)
+      Promise.all([listTags(), listEventsByTag(activeTagId)])
+        .then(([loadedTags, loadedEvents]) => {
+          setTags(loadedTags)
+          setEvents(loadedEvents)
+        })
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false))
     }
-  }, [dbReady])
+  }, [activeTagId, dbReady])
 
   useEffect(() => {
-    if (dbReady && !loading && events.length === 0) {
+    if (
+      dbReady &&
+      !loading &&
+      activeTagId === ALL_TAG_ID &&
+      events.length === 0
+    ) {
       router.push(PATHS.EVENT)
     }
-  }, [dbReady, loading, events.length, router])
+  }, [activeTagId, dbReady, loading, events.length, router])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -53,23 +68,32 @@ export const useListEvents = () => {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
-    if (active.id === over?.id) return
+    if (!over || active.id === over.id) return
 
     const oldIndex = events.findIndex((e) => String(e.id) === active.id)
-    const newIndex = events.findIndex((e) => String(e.id) === over?.id)
+    const newIndex = events.findIndex((e) => String(e.id) === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
     setEvents((items) => {
-      const ordered = arrayMove(items, oldIndex, newIndex).map(
-        (item, sortOrder) => ({
-          ...item,
-          sortOrder,
-        }),
-      )
-      reorderEvents(ordered.map((e) => e.id)).catch((err) => {
+      const ordered = arrayMove(items, oldIndex, newIndex)
+      reorderEventsInTag(
+        activeTagId,
+        ordered.map((e) => e.id),
+      ).catch((err) => {
         setError(err.message)
       })
       return ordered
     })
   }
 
-  return { events, loading, error, sensors, handleDragEnd }
+  return {
+    activeTagId,
+    events,
+    loading,
+    error,
+    sensors,
+    tags,
+    setActiveTagId,
+    handleDragEnd,
+  }
 }

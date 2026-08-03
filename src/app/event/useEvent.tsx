@@ -3,7 +3,7 @@ import { SubmitHandler } from 'react-hook-form'
 import { EventFormData } from '@/types/event'
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
-import { EventDraft, saveEvent } from '@/helpers/indexedDB'
+import { EventDraft, parseTagNames, saveEvent } from '@/helpers/indexedDB'
 
 export const useEvent = () => {
   const router = useRouter()
@@ -15,6 +15,7 @@ export const useEvent = () => {
       date,
       time,
       title,
+      tags,
       seconds,
       minutes,
       hours,
@@ -35,7 +36,7 @@ export const useEvent = () => {
       years,
     }
     try {
-      await saveEvent(newEventData)
+      await saveEvent(newEventData, parseTagNames(tags))
       router.push('/')
     } catch (err) {
       console.error('Failed to create new event:', err)

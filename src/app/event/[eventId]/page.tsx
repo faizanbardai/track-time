@@ -1,7 +1,7 @@
 'use client'
 import React from 'react'
 import { useEffect, useState } from 'react'
-import { Event } from '@/types/event'
+import { EventWithTags } from '@/types/event'
 import { getEvent } from '@/helpers/indexedDB'
 import CreateOrUpdateEvent from '@/components/Event/CreateOrUpdateEvent'
 
@@ -11,7 +11,7 @@ interface EventPageProps {
 
 const SingleEventPage = ({ params }: EventPageProps) => {
   const { eventId } = React.use(params)
-  const [event, setEvent] = useState<Event | null>(null)
+  const [event, setEvent] = useState<EventWithTags | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

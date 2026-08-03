@@ -13,23 +13,25 @@ import { Button } from '@/components/ui/button'
 import DeleteEvent from '@/components/Event/DeleteEvent'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useEvent } from '@/app/event/useEvent'
-import { Event, EventFormData } from '@/types/event'
+import { EventFormData, EventWithTags } from '@/types/event'
 import { units } from '@/constants/units'
 import { getEventDefaultValues } from '@/helpers/datetime/getEventDefaultValues'
 import dayjs from 'dayjs'
+import { formatTagNames } from '@/helpers/indexedDB'
 
 interface EventPageProps {
-  event: Event | null
+  event: EventWithTags | null
 }
 
-const getFormDefaultValues = (event: Event | null): EventFormData => {
+const getFormDefaultValues = (event: EventWithTags | null): EventFormData => {
   if (!event?.id) return getEventDefaultValues()
 
-  const { createdAt, updatedAt, datetime, sortOrder, ...rest } = event
+  const { createdAt, updatedAt, datetime, tags, ...rest } = event
   return {
     ...rest,
     date: dayjs(datetime).format('YYYY-MM-DD'),
     time: dayjs(datetime).format('HH:mm'),
+    tags: formatTagNames(tags),
   }
 }
 
@@ -69,6 +71,14 @@ const CreateOrUpdateEvent = ({ event }: EventPageProps) => {
             <div className="grid gap-2">
               <Label htmlFor="time">Time</Label>
               <Input {...register('time')} id="time" type="time" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="tags">Tags</Label>
+              <Input
+                {...register('tags')}
+                id="tags"
+                placeholder="work, personal, urgent"
+              />
             </div>
             <div className="grid gap-2">
               <Label>Enable units</Label>

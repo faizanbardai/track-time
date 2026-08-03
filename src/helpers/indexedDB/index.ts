@@ -1,76 +1,295 @@
 import Dexie, { type Table } from 'dexie'
-import { Event } from '@/types/event'
+import { v4 as uuid } from 'uuid'
+import { Event, EventWithTags, Tag, TagEventOrder } from '@/types/event'
 
-export type EventDraft = Omit<Event, 'createdAt' | 'sortOrder' | 'updatedAt'> &
-  Partial<Pick<Event, 'createdAt' | 'sortOrder' | 'updatedAt'>>
+export type EventDraft = Omit<Event, 'createdAt' | 'updatedAt'> &
+  Partial<Pick<Event, 'createdAt' | 'updatedAt'>>
+
+export const ALL_TAG_ID = 'all'
+
+const ALL_TAG_NAME = 'All'
+
+const getTagEventOrderId = (tagId: string, eventId: string) => {
+  return `${tagId}:${eventId}`
+}
 
 class TrackTimeDB extends Dexie {
   events!: Table<Event, string>
+  tags!: Table<Tag, string>
+  tagEventOrder!: Table<TagEventOrder, string>
 
   constructor() {
     super('track-time-local')
 
-    this.version(1).stores({
-      events: '&id, sortOrder, createdAt, updatedAt',
+    this.version(2).stores({
+      events: '&id, datetime, createdAt, updatedAt',
+      tags: '&id, &name, system, createdAt, updatedAt',
+      tagEventOrder:
+        '&id, tagId, eventId, [tagId+sortOrder], [tagId+eventId], createdAt, updatedAt',
     })
   }
 }
 
 export const db = new TrackTimeDB()
 
-const sortEvents = (events: Event[]) => {
-  return [...events].sort((first, second) => {
-    if (first.sortOrder !== second.sortOrder) {
-      return first.sortOrder - second.sortOrder
+const normalizeTagName = (name: string) => name.trim()
+
+const normalizeTagNames = (tagNames: string[]) => {
+  const seen = new Set<string>()
+  return tagNames.reduce<string[]>((normalizedNames, tagName) => {
+    const normalized = normalizeTagName(tagName)
+    const key = normalized.toLocaleLowerCase()
+
+    if (
+      !normalized ||
+      key === ALL_TAG_NAME.toLocaleLowerCase() ||
+      seen.has(key)
+    ) {
+      return normalizedNames
     }
 
-    return first.createdAt.localeCompare(second.createdAt)
+    seen.add(key)
+    return [...normalizedNames, normalized]
+  }, [])
+}
+
+export const parseTagNames = (tags: string) => {
+  return normalizeTagNames(tags.split(','))
+}
+
+export const formatTagNames = (tags: Tag[]) => {
+  return tags
+    .filter((tag) => tag.id !== ALL_TAG_ID)
+    .map((tag) => tag.name)
+    .join(', ')
+}
+
+export const ensureSystemTags = async (): Promise<Tag> => {
+  const existing = await db.tags.get(ALL_TAG_ID)
+  const now = new Date().toISOString()
+
+  if (existing) return existing
+
+  const allTag: Tag = {
+    id: ALL_TAG_ID,
+    name: ALL_TAG_NAME,
+    system: true,
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  await db.tags.put(allTag)
+  return allTag
+}
+
+const getNextSortOrder = async (tagId: string) => {
+  const lastOrder = await db.tagEventOrder
+    .where('[tagId+sortOrder]')
+    .between([tagId, Dexie.minKey], [tagId, Dexie.maxKey])
+    .last()
+
+  return lastOrder ? lastOrder.sortOrder + 1 : 0
+}
+
+const getOrCreateTags = async (tagNames: string[]) => {
+  const now = new Date().toISOString()
+  const normalizedNames = normalizeTagNames(tagNames)
+  const existingTags = await db.tags.toArray()
+  const tagsByName = new Map(
+    existingTags.map((tag) => [tag.name.toLocaleLowerCase(), tag]),
+  )
+
+  const tags = await Promise.all(
+    normalizedNames.map(async (tagName) => {
+      const existing = tagsByName.get(tagName.toLocaleLowerCase())
+      if (existing) return existing
+
+      const tag: Tag = {
+        id: uuid(),
+        name: tagName,
+        system: false,
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      await db.tags.add(tag)
+      return tag
+    }),
+  )
+
+  return [await ensureSystemTags(), ...tags]
+}
+
+const assignEventToTagIds = async (eventId: string, tagIds: string[]) => {
+  const now = new Date().toISOString()
+  const tagIdsToAssign = Array.from(new Set([ALL_TAG_ID, ...tagIds]))
+  const existingOrders = await db.tagEventOrder
+    .where('eventId')
+    .equals(eventId)
+    .toArray()
+  const existingTagIds = new Set(existingOrders.map((order) => order.tagId))
+  const nextTagIds = new Set(tagIdsToAssign)
+  const removableOrders = existingOrders.filter(
+    (order) => order.tagId !== ALL_TAG_ID && !nextTagIds.has(order.tagId),
+  )
+
+  await db.tagEventOrder.bulkDelete(removableOrders.map((order) => order.id))
+
+  await Promise.all(
+    tagIdsToAssign.map(async (tagId) => {
+      if (existingTagIds.has(tagId)) return
+
+      const order: TagEventOrder = {
+        id: getTagEventOrderId(tagId, eventId),
+        tagId,
+        eventId,
+        sortOrder: await getNextSortOrder(tagId),
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      await db.tagEventOrder.put(order)
+    }),
+  )
+}
+
+const attachTagsToEvents = async (
+  events: Event[],
+): Promise<EventWithTags[]> => {
+  if (events.length === 0) return []
+
+  const eventIds = events.map((event) => event.id)
+  const orders = await db.tagEventOrder
+    .where('eventId')
+    .anyOf(eventIds)
+    .toArray()
+  const tags = await db.tags.bulkGet(orders.map((order) => order.tagId))
+  const tagsById = new Map(
+    tags.filter((tag): tag is Tag => Boolean(tag)).map((tag) => [tag.id, tag]),
+  )
+  const tagsByEventId = orders.reduce<Map<string, Tag[]>>((map, order) => {
+    const tag = tagsById.get(order.tagId)
+    if (!tag) return map
+
+    map.set(order.eventId, [...(map.get(order.eventId) ?? []), tag])
+    return map
+  }, new Map())
+
+  return events.map((event) => ({
+    ...event,
+    tags: (tagsByEventId.get(event.id) ?? []).sort((first, second) => {
+      if (first.system !== second.system) return first.system ? -1 : 1
+      return first.name.localeCompare(second.name)
+    }),
+  }))
+}
+
+export const listTags = async (): Promise<Tag[]> => {
+  await ensureSystemTags()
+  const tags = await db.tags.toArray()
+
+  return tags.sort((first, second) => {
+    if (first.system !== second.system) return first.system ? -1 : 1
+    return first.name.localeCompare(second.name)
   })
 }
 
-const getNextSortOrder = async () => {
-  const lastEvent = await db.events.orderBy('sortOrder').last()
-  return lastEvent ? lastEvent.sortOrder + 1 : 0
+export const listEventsByTag = async (
+  tagId = ALL_TAG_ID,
+): Promise<EventWithTags[]> => {
+  await ensureSystemTags()
+  const orderedEventIds = await db.tagEventOrder
+    .where('[tagId+sortOrder]')
+    .between([tagId, Dexie.minKey], [tagId, Dexie.maxKey])
+    .toArray()
+  const events = await db.events.bulkGet(
+    orderedEventIds.map((order) => order.eventId),
+  )
+  const eventsById = new Map(
+    events
+      .filter((event): event is Event => Boolean(event))
+      .map((event) => [event.id, event]),
+  )
+  const sortedEvents = orderedEventIds
+    .map((order) => eventsById.get(order.eventId))
+    .filter((event): event is Event => Boolean(event))
+
+  return attachTagsToEvents(sortedEvents)
 }
 
-export const listEvents = async (): Promise<Event[]> => {
-  const events = await db.events.toArray()
-  return sortEvents(events)
+export const listEvents = async (): Promise<EventWithTags[]> => {
+  return listEventsByTag(ALL_TAG_ID)
 }
 
-export const getEvent = async (eventId: string): Promise<Event | null> => {
-  return (await db.events.get(eventId)) ?? null
+export const getEvent = async (
+  eventId: string,
+): Promise<EventWithTags | null> => {
+  const event = await db.events.get(eventId)
+  if (!event) return null
+
+  const [eventWithTags] = await attachTagsToEvents([event])
+  return eventWithTags
 }
 
-export const saveEvent = async (event: EventDraft): Promise<string> => {
-  return db.transaction('rw', db.events, async () => {
-    const existing = await db.events.get(event.id)
-    const now = new Date().toISOString()
-    const eventToSave: Event = {
-      ...event,
-      createdAt: existing?.createdAt ?? event.createdAt ?? now,
-      sortOrder:
-        existing?.sortOrder ?? event.sortOrder ?? (await getNextSortOrder()),
-      updatedAt: now,
-    }
+export const saveEvent = async (
+  event: EventDraft,
+  tagNames: string[] = [],
+): Promise<string> => {
+  return db.transaction(
+    'rw',
+    db.events,
+    db.tags,
+    db.tagEventOrder,
+    async () => {
+      const existing = await db.events.get(event.id)
+      const now = new Date().toISOString()
+      const eventToSave: Event = {
+        ...event,
+        createdAt: existing?.createdAt ?? event.createdAt ?? now,
+        updatedAt: now,
+      }
+      const tags = await getOrCreateTags(tagNames)
 
-    await db.events.put(eventToSave)
-    return event.id
-  })
+      await db.events.put(eventToSave)
+      await assignEventToTagIds(
+        event.id,
+        tags.map((tag) => tag.id),
+      )
+
+      return event.id
+    },
+  )
 }
 
 export const deleteEvent = async (eventId: string): Promise<void> => {
-  await db.events.delete(eventId)
+  await db.transaction('rw', db.events, db.tagEventOrder, async () => {
+    const orders = await db.tagEventOrder
+      .where('eventId')
+      .equals(eventId)
+      .toArray()
+    await db.tagEventOrder.bulkDelete(orders.map((order) => order.id))
+    await db.events.delete(eventId)
+  })
 }
 
-export const reorderEvents = async (eventIds: string[]): Promise<void> => {
+export const reorderEventsInTag = async (
+  tagId: string,
+  eventIds: string[],
+): Promise<void> => {
   const now = new Date().toISOString()
 
-  await db.transaction('rw', db.events, async () => {
+  await db.transaction('rw', db.tagEventOrder, async () => {
     await Promise.all(
       eventIds.map((eventId, sortOrder) => {
-        return db.events.update(eventId, { sortOrder, updatedAt: now })
+        return db.tagEventOrder.update(getTagEventOrderId(tagId, eventId), {
+          sortOrder,
+          updatedAt: now,
+        })
       }),
     )
   })
+}
+
+export const reorderEvents = async (eventIds: string[]): Promise<void> => {
+  return reorderEventsInTag(ALL_TAG_ID, eventIds)
 }

@@ -1,10 +1,10 @@
 import { ListEvent } from '@/components/Event/ListEvent'
-import { Event } from '@/types/event'
+import { EventWithTags } from '@/types/event'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
 interface SortableEventItemProps {
-  event: Event
+  event: EventWithTags
 }
 
 export const SortableEventItem = ({ event }: SortableEventItemProps) => {
