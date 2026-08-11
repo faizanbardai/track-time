@@ -18,6 +18,9 @@ import { units } from '@/constants/units'
 import { getEventDefaultValues } from '@/helpers/datetime/getEventDefaultValues'
 import dayjs from 'dayjs'
 import { formatTagNames } from '@/helpers/indexedDB'
+import { TagPicker } from '@/components/Tag/TagPicker'
+import Link from 'next/link'
+import { PATHS } from '@/constants/paths'
 
 interface EventPageProps {
   event: EventWithTags | null
@@ -73,11 +76,27 @@ const CreateOrUpdateEvent = ({ event }: EventPageProps) => {
               <Input {...register('time')} id="time" type="time" />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="tags">Tags</Label>
-              <Input
-                {...register('tags')}
-                id="tags"
-                placeholder="work, personal, urgent"
+              <div className="flex items-center justify-between">
+                <Label>Tags</Label>
+                <Button
+                  asChild
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0"
+                >
+                  <Link href={PATHS.TAGS}>Manage tags</Link>
+                </Button>
+              </div>
+              <Controller
+                name="tags"
+                control={control}
+                render={({ field }) => (
+                  <TagPicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
             </div>
             <div className="grid gap-2">

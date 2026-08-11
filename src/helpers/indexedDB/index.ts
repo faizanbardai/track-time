@@ -1,6 +1,12 @@
 import Dexie, { type Table } from 'dexie'
 import { v4 as uuid } from 'uuid'
-import { Event, EventWithTags, Tag, TagEventOrder } from '@/types/event'
+import {
+  Event,
+  EventWithTags,
+  Tag,
+  TagEventOrder,
+  TagWithUsage,
+} from '@/types/event'
 
 export type EventDraft = Omit<Event, 'createdAt' | 'updatedAt'> &
   Partial<Pick<Event, 'createdAt' | 'updatedAt'>>
@@ -33,6 +39,17 @@ class TrackTimeDB extends Dexie {
 export const db = new TrackTimeDB()
 
 const normalizeTagName = (name: string) => name.trim()
+
+const validateTagName = (name: string) => {
+  const normalized = normalizeTagName(name)
+
+  if (!normalized) throw new Error('Tag name cannot be empty')
+  if (normalized.toLocaleLowerCase() === ALL_TAG_NAME.toLocaleLowerCase()) {
+    throw new Error(`“${ALL_TAG_NAME}” is reserved for the system tag`)
+  }
+
+  return normalized
+}
 
 const normalizeTagNames = (tagNames: string[]) => {
   const seen = new Set<string>()
@@ -191,6 +208,87 @@ export const listTags = async (): Promise<Tag[]> => {
   return tags.sort((first, second) => {
     if (first.system !== second.system) return first.system ? -1 : 1
     return first.name.localeCompare(second.name)
+  })
+}
+
+export const listTagsWithUsage = async (): Promise<TagWithUsage[]> => {
+  const [tags, assignments] = await Promise.all([
+    listTags(),
+    db.tagEventOrder.toArray(),
+  ])
+  const counts = assignments.reduce<Map<string, number>>((result, item) => {
+    result.set(item.tagId, (result.get(item.tagId) ?? 0) + 1)
+    return result
+  }, new Map())
+
+  return tags.map((tag) => ({
+    ...tag,
+    eventCount: counts.get(tag.id) ?? 0,
+  }))
+}
+
+export const createTag = async (name: string): Promise<Tag> => {
+  const normalized = validateTagName(name)
+
+  return db.transaction('rw', db.tags, async () => {
+    const tags = await db.tags.toArray()
+    const existing = tags.find(
+      (tag) => tag.name.toLocaleLowerCase() === normalized.toLocaleLowerCase(),
+    )
+    if (existing) return existing
+
+    const now = new Date().toISOString()
+    const tag: Tag = {
+      id: uuid(),
+      name: normalized,
+      system: false,
+      createdAt: now,
+      updatedAt: now,
+    }
+    await db.tags.add(tag)
+    return tag
+  })
+}
+
+export const renameTag = async (tagId: string, name: string): Promise<void> => {
+  if (tagId === ALL_TAG_ID) throw new Error('The system tag cannot be renamed')
+  const normalized = validateTagName(name)
+
+  await db.transaction('rw', db.tags, async () => {
+    const tag = await db.tags.get(tagId)
+    if (!tag) throw new Error('Tag not found')
+    if (tag.system) throw new Error('System tags cannot be renamed')
+
+    const tags = await db.tags.toArray()
+    const duplicate = tags.find(
+      (candidate) =>
+        candidate.id !== tagId &&
+        candidate.name.toLocaleLowerCase() === normalized.toLocaleLowerCase(),
+    )
+    if (duplicate)
+      throw new Error(`A tag named “${duplicate.name}” already exists`)
+
+    await db.tags.update(tagId, {
+      name: normalized,
+      updatedAt: new Date().toISOString(),
+    })
+  })
+}
+
+export const deleteTag = async (tagId: string): Promise<void> => {
+  if (tagId === ALL_TAG_ID) throw new Error('The system tag cannot be deleted')
+
+  await db.transaction('rw', db.tags, db.tagEventOrder, async () => {
+    const tag = await db.tags.get(tagId)
+    if (!tag) return
+    if (tag.system) throw new Error('System tags cannot be deleted')
+
+    const assignments = await db.tagEventOrder
+      .where('tagId')
+      .equals(tagId)
+      .toArray()
+    await db.tagEventOrder.bulkDelete(assignments.map((item) => item.id))
+    await db.tags.delete(tagId)
   })
 }
 

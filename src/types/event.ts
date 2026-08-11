@@ -20,6 +20,10 @@ export interface Tag {
   updatedAt: string
 }
 
+export type TagWithUsage = Tag & {
+  eventCount: number
+}
+
 export interface TagEventOrder {
   id: string
   tagId: string

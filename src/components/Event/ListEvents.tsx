@@ -25,7 +25,7 @@ export const ListEvents = () => {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-2">
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => (
           <Button
@@ -48,7 +48,7 @@ export const ListEvents = () => {
           items={events.map((event) => String(event.id))}
           strategy={verticalListSortingStrategy}
         >
-          <div className="grid grid-cols-1 gap-4 py-2">
+          <div className="grid grid-cols-1 gap-4">
             {events.map((event) => (
               <SortableEventItem key={event.id} event={event} />
             ))}
