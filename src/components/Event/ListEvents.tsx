@@ -48,7 +48,7 @@ export const ListEvents = () => {
           items={events.map((event) => String(event.id))}
           strategy={verticalListSortingStrategy}
         >
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-2">
             {events.map((event) => (
               <SortableEventItem key={event.id} event={event} />
             ))}
