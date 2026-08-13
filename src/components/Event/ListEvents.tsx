@@ -9,14 +9,15 @@ import { Button } from '@/components/ui/button'
 export const ListEvents = () => {
   const {
     activeTagId,
-    loading,
+    initialLoading,
+    tagLoading,
     events,
     sensors,
     tags,
-    setActiveTagId,
+    selectTag,
     handleDragEnd,
   } = useListEvents()
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="col-span-full text-center text-muted-foreground py-12">
         Loading events...
@@ -25,7 +26,7 @@ export const ListEvents = () => {
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2" aria-busy={tagLoading}>
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => (
           <Button
@@ -33,12 +34,27 @@ export const ListEvents = () => {
             type="button"
             variant={tag.id === activeTagId ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setActiveTagId(tag.id)}
+            className={
+              tag.id === activeTagId ? 'border border-transparent' : ''
+            }
+            disabled={tag.id === activeTagId}
+            onClick={() => selectTag(tag.id)}
           >
             {tag.name}
           </Button>
         ))}
       </div>
+      <div className="relative h-0.5 overflow-hidden rounded-full">
+        {tagLoading && (
+          <div
+            className="event-list-progress absolute inset-y-0 left-0 w-1/3 rounded-full bg-primary"
+            aria-hidden="true"
+          />
+        )}
+      </div>
+      <span className="sr-only" role="status" aria-live="polite">
+        {tagLoading ? 'Loading events...' : ''}
+      </span>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
