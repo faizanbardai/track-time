@@ -2,6 +2,7 @@ import { ListEvents } from '@/components/Event/ListEvents'
 import { Button } from '@/components/ui/button'
 import { PATHS } from '@/constants/paths'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 export default function Home() {
   return (
@@ -14,7 +15,15 @@ export default function Home() {
           <Link href={PATHS.TAGS}>Manage tags</Link>
         </Button>
       </div>
-      <ListEvents />
+      <Suspense
+        fallback={
+          <div className="text-center text-muted-foreground py-12">
+            Loading events...
+          </div>
+        }
+      >
+        <ListEvents />
+      </Suspense>
     </main>
   )
 }

@@ -17,6 +17,7 @@ import { useIndexedDB } from '@/components/providers/indexedDB'
 import { useRouter } from 'next/navigation'
 import { arrayMove } from '@dnd-kit/sortable'
 import { PATHS } from '@/constants/paths'
+import { useActiveTag } from '@/components/Event/useActiveTag'
 
 export const useListEvents = () => {
   const router = useRouter()
@@ -24,33 +25,65 @@ export const useListEvents = () => {
 
   const [events, setEvents] = useState<EventWithTags[]>([])
   const [tags, setTags] = useState<Tag[]>([])
-  const [activeTagId, setActiveTagId] = useState(ALL_TAG_ID)
+  const [loadedTagId, setLoadedTagId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const {
+    activeTagId,
+    selectionReady,
+    selectTag: persistActiveTag,
+  } = useActiveTag(tags)
 
   useEffect(() => {
-    if (dbReady) {
-      setLoading(true)
-      Promise.all([listTags(), listEventsByTag(activeTagId)])
-        .then(([loadedTags, loadedEvents]) => {
-          setTags(loadedTags)
-          setEvents(loadedEvents)
-        })
-        .catch((err) => setError(err.message))
-        .finally(() => setLoading(false))
+    if (!dbReady) return
+
+    listTags()
+      .then(setTags)
+      .catch((err) => {
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [dbReady])
+
+  useEffect(() => {
+    if (!dbReady || !selectionReady) return
+
+    let cancelled = false
+    setLoading(true)
+    listEventsByTag(activeTagId)
+      .then((loadedEvents) => {
+        if (cancelled) return
+        setEvents(loadedEvents)
+        setLoadedTagId(activeTagId)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
     }
-  }, [activeTagId, dbReady])
+  }, [activeTagId, dbReady, selectionReady])
 
   useEffect(() => {
     if (
       dbReady &&
       !loading &&
+      loadedTagId === activeTagId &&
       activeTagId === ALL_TAG_ID &&
       events.length === 0
     ) {
       router.push(PATHS.EVENT)
     }
-  }, [activeTagId, dbReady, loading, events.length, router])
+  }, [activeTagId, dbReady, events.length, loadedTagId, loading, router])
+
+  const selectTag = (tagId: string) => {
+    setLoading(true)
+    persistActiveTag(tagId)
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -89,11 +122,12 @@ export const useListEvents = () => {
   return {
     activeTagId,
     events,
-    loading,
+    initialLoading: loading && loadedTagId === null,
+    tagLoading: loading && loadedTagId !== null,
     error,
     sensors,
     tags,
-    setActiveTagId,
+    selectTag,
     handleDragEnd,
   }
 }

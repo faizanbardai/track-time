@@ -116,7 +116,31 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scrollbar-gutter: stable;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@keyframes event-list-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+.event-list-progress {
+  animation: event-list-progress 1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-list-progress {
+    width: 100%;
+    animation: none;
+    opacity: 0.65;
   }
 }
