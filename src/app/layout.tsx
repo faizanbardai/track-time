@@ -18,6 +18,27 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Time Tracker',
   description: 'Track your time effectively',
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      {
+        url: '/icons/favicon-196.png',
+        type: 'image/png',
+        sizes: '196x196',
+      },
+    ],
+    apple: [
+      {
+        url: '/icons/apple-icon-180.png',
+        type: 'image/png',
+        sizes: '180x180',
+      },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Time Tracker',
+  },
 }
 
 export default function RootLayout({
@@ -27,6 +48,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
