@@ -4,7 +4,7 @@ import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { SortableEventItem } from './SortableEventItem'
 import { useListEvents } from '@/components/Event/useListEvents'
-import { Button } from '@/components/ui/button'
+import { EventBottomBar } from '@/components/Event/EventBottomBar'
 
 export const ListEvents = () => {
   const {
@@ -27,23 +27,6 @@ export const ListEvents = () => {
 
   return (
     <div className="grid gap-2" aria-busy={tagLoading}>
-      <div className="flex flex-wrap gap-2">
-        {tags.map((tag) => (
-          <Button
-            key={tag.id}
-            type="button"
-            variant={tag.id === activeTagId ? 'default' : 'outline'}
-            size="sm"
-            className={
-              tag.id === activeTagId ? 'border border-transparent' : ''
-            }
-            disabled={tag.id === activeTagId}
-            onClick={() => selectTag(tag.id)}
-          >
-            {tag.name}
-          </Button>
-        ))}
-      </div>
       <div className="relative h-0.5 overflow-hidden rounded-full">
         {tagLoading && (
           <div
@@ -71,6 +54,11 @@ export const ListEvents = () => {
           </div>
         </SortableContext>
       </DndContext>
+      <EventBottomBar
+        activeTagId={activeTagId}
+        tags={tags}
+        onSelectTag={selectTag}
+      />
     </div>
   )
 }

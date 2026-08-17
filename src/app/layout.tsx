@@ -4,6 +4,7 @@ import './globals.css'
 import Container from '@/ui/Container/Container'
 import { ThemeProvider } from 'next-themes'
 import { IndexedDBProvider } from '@/components/providers/indexedDB'
+import { AppHeader } from '@/components/Layout/AppHeader'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -37,6 +38,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <IndexedDBProvider>
+            <AppHeader />
             <Container>{children}</Container>
           </IndexedDBProvider>
         </ThemeProvider>
