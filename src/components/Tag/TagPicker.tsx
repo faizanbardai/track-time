@@ -5,7 +5,7 @@ import { X } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { useIndexedDB } from '@/components/providers/indexedDB'
-import { listTags, parseTagNames } from '@/helpers/indexedDB'
+import { listTags, normalizeTagKey, parseTagNames } from '@/helpers/indexedDB'
 import { Tag } from '@/types/event'
 
 interface TagPickerProps {
@@ -23,7 +23,7 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
   const [error, setError] = useState<string | null>(null)
   const selectedNames = useMemo(() => parseTagNames(value), [value])
   const selectedKeys = useMemo(
-    () => new Set(selectedNames.map((name) => name.toLocaleLowerCase())),
+    () => new Set(selectedNames.map(normalizeTagKey)),
     [selectedNames],
   )
 
@@ -37,27 +37,24 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
   }, [dbReady])
 
   const filteredTags = tags.filter((tag) =>
-    tag.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
+    normalizeTagKey(tag.name).includes(normalizeTagKey(query)),
   )
   const normalizedQuery = query.trim()
   const canCreate =
     Boolean(normalizedQuery) &&
-    normalizedQuery.toLocaleLowerCase() !== 'all' &&
-    !selectedKeys.has(normalizedQuery.toLocaleLowerCase()) &&
+    normalizeTagKey(normalizedQuery) !== normalizeTagKey('All') &&
+    !selectedKeys.has(normalizeTagKey(normalizedQuery)) &&
     !tags.some(
-      (tag) =>
-        tag.name.toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase(),
+      (tag) => normalizeTagKey(tag.name) === normalizeTagKey(normalizedQuery),
     )
 
   const setSelected = (names: string[]) => onChange(serialize(names))
 
   const toggleTag = (name: string) => {
-    const key = name.toLocaleLowerCase()
+    const key = normalizeTagKey(name)
     if (selectedKeys.has(key)) {
       setSelected(
-        selectedNames.filter(
-          (selected) => selected.toLocaleLowerCase() !== key,
-        ),
+        selectedNames.filter((selected) => normalizeTagKey(selected) !== key),
       )
       return
     }
@@ -65,13 +62,15 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
   }
 
   const addQuery = () => {
-    if (!normalizedQuery || normalizedQuery.toLocaleLowerCase() === 'all')
+    if (
+      !normalizedQuery ||
+      normalizeTagKey(normalizedQuery) === normalizeTagKey('All')
+    )
       return
     const existing = tags.find(
-      (tag) =>
-        tag.name.toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase(),
+      (tag) => normalizeTagKey(tag.name) === normalizeTagKey(normalizedQuery),
     )
-    if (!selectedKeys.has(normalizedQuery.toLocaleLowerCase())) {
+    if (!selectedKeys.has(normalizeTagKey(normalizedQuery))) {
       setSelected([...selectedNames, existing?.name ?? normalizedQuery])
     }
     setQuery('')
@@ -83,7 +82,7 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
         <div className="flex flex-wrap gap-2">
           {selectedNames.map((name) => (
             <span
-              key={name.toLocaleLowerCase()}
+              key={normalizeTagKey(name)}
               className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground"
             >
               {name}
@@ -122,7 +121,7 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
           >
             <Checkbox
               id={`tag-${tag.id}`}
-              checked={selectedKeys.has(tag.name.toLocaleLowerCase())}
+              checked={selectedKeys.has(normalizeTagKey(tag.name))}
               onCheckedChange={() => toggleTag(tag.name)}
             />
             {tag.name}

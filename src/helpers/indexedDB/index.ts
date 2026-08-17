@@ -38,13 +38,16 @@ class TrackTimeDB extends Dexie {
 
 export const db = new TrackTimeDB()
 
-const normalizeTagName = (name: string) => name.trim()
+const normalizeTagName = (name: string) => name.trim().normalize('NFC')
+
+export const normalizeTagKey = (name: string) =>
+  normalizeTagName(name).toLowerCase()
 
 const validateTagName = (name: string) => {
   const normalized = normalizeTagName(name)
 
   if (!normalized) throw new Error('Tag name cannot be empty')
-  if (normalized.toLocaleLowerCase() === ALL_TAG_NAME.toLocaleLowerCase()) {
+  if (normalizeTagKey(normalized) === normalizeTagKey(ALL_TAG_NAME)) {
     throw new Error(`“${ALL_TAG_NAME}” is reserved for the system tag`)
   }
 
@@ -55,13 +58,9 @@ const normalizeTagNames = (tagNames: string[]) => {
   const seen = new Set<string>()
   return tagNames.reduce<string[]>((normalizedNames, tagName) => {
     const normalized = normalizeTagName(tagName)
-    const key = normalized.toLocaleLowerCase()
+    const key = normalizeTagKey(normalized)
 
-    if (
-      !normalized ||
-      key === ALL_TAG_NAME.toLocaleLowerCase() ||
-      seen.has(key)
-    ) {
+    if (!normalized || key === normalizeTagKey(ALL_TAG_NAME) || seen.has(key)) {
       return normalizedNames
     }
 
@@ -113,12 +112,12 @@ const getOrCreateTags = async (tagNames: string[]) => {
   const normalizedNames = normalizeTagNames(tagNames)
   const existingTags = await db.tags.toArray()
   const tagsByName = new Map(
-    existingTags.map((tag) => [tag.name.toLocaleLowerCase(), tag]),
+    existingTags.map((tag) => [normalizeTagKey(tag.name), tag]),
   )
 
   const tags = await Promise.all(
     normalizedNames.map(async (tagName) => {
-      const existing = tagsByName.get(tagName.toLocaleLowerCase())
+      const existing = tagsByName.get(normalizeTagKey(tagName))
       if (existing) return existing
 
       const tag: Tag = {
@@ -233,7 +232,7 @@ export const createTag = async (name: string): Promise<Tag> => {
   return db.transaction('rw', db.tags, async () => {
     const tags = await db.tags.toArray()
     const existing = tags.find(
-      (tag) => tag.name.toLocaleLowerCase() === normalized.toLocaleLowerCase(),
+      (tag) => normalizeTagKey(tag.name) === normalizeTagKey(normalized),
     )
     if (existing) return existing
 
@@ -263,7 +262,7 @@ export const renameTag = async (tagId: string, name: string): Promise<void> => {
     const duplicate = tags.find(
       (candidate) =>
         candidate.id !== tagId &&
-        candidate.name.toLocaleLowerCase() === normalized.toLocaleLowerCase(),
+        normalizeTagKey(candidate.name) === normalizeTagKey(normalized),
     )
     if (duplicate)
       throw new Error(`A tag named “${duplicate.name}” already exists`)
