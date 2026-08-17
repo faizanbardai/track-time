@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { db, listEventsByTag } from '@/helpers/indexedDB'
+import { db, listEventsByTag, normalizeTagKey } from '@/helpers/indexedDB'
 import {
   createBackup,
   decryptBackup,
@@ -124,6 +124,18 @@ describe('backup and restore', () => {
     ).resolves.toEqual(source)
   })
 
+  it('rejects tampered authenticated metadata', async () => {
+    const encrypted = await encryptBackup(
+      importedBackup(),
+      'correct horse battery staple',
+    )
+    encrypted.exportedAt = '2026-08-17T14:00:00.000Z'
+
+    await expect(
+      decryptBackup(JSON.stringify(encrypted), 'correct horse battery staple'),
+    ).rejects.toThrow('Check the password and file')
+  })
+
   it('rejects invalid data without changing existing records', async () => {
     const original = originalBackup()
     await seed(original)
@@ -133,6 +145,41 @@ describe('backup and restore', () => {
       'Unsupported backup schema version',
     )
     expect(await readDatabase()).toEqual(original.data)
+  })
+
+  it.each(['1', '2024-01-01', '2024-02-30T00:00:00.000Z'])(
+    'rejects non-canonical timestamp %s',
+    (datetime) => {
+      const invalid = structuredClone(importedBackup())
+      invalid.data.events[0].datetime = datetime
+
+      expect(() => validateBackup(invalid)).toThrow('must be a valid ISO date')
+    },
+  )
+
+  it('rejects broken references, duplicate ordering, and blank tag names', () => {
+    const brokenReference = structuredClone(importedBackup())
+    brokenReference.data.tagEventOrder[0].eventId = 'missing-event'
+    brokenReference.data.tagEventOrder[0].id = 'all:missing-event'
+    expect(() => validateBackup(brokenReference)).toThrow(
+      'references unknown event',
+    )
+
+    const duplicateOrder = structuredClone(importedBackup())
+    duplicateOrder.data.tagEventOrder[0].sortOrder = 0
+    expect(() => validateBackup(duplicateOrder)).toThrow(
+      'Per-tag sort positions contains duplicate',
+    )
+
+    const blankTag = structuredClone(importedBackup())
+    blankTag.data.tags[1].name = '   '
+    expect(() => validateBackup(blankTag)).toThrow('name cannot be blank')
+  })
+
+  it('normalizes tag keys independently of the browser locale', () => {
+    expect(normalizeTagKey(' I ')).toBe('i')
+    expect(normalizeTagKey('ı')).toBe('ı')
+    expect(normalizeTagKey('Cafe\u0301')).toBe(normalizeTagKey('Café'))
   })
 
   it('replaces all data and preserves per-tag ordering', async () => {

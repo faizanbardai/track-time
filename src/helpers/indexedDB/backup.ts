@@ -1,4 +1,9 @@
-import { ALL_TAG_ID, db, ensureSystemTags } from '@/helpers/indexedDB'
+import {
+  ALL_TAG_ID,
+  db,
+  ensureSystemTags,
+  normalizeTagKey,
+} from '@/helpers/indexedDB'
 import type { Event, Tag, TagEventOrder } from '@/types/event'
 import {
   BACKUP_SCHEMA_VERSION,
@@ -13,6 +18,7 @@ const PBKDF2_ITERATIONS = 310_000
 const SALT_BYTES = 16
 const IV_BYTES = 12
 const MINIMUM_PASSWORD_LENGTH = 8
+const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -39,7 +45,12 @@ const requireBoolean = (value: unknown, label: string) => {
 
 const requireIsoDate = (value: unknown, label: string) => {
   const date = requireString(value, label)
-  if (!Number.isFinite(Date.parse(date))) {
+  const parsed = new Date(date)
+  if (
+    !ISO_TIMESTAMP.test(date) ||
+    !Number.isFinite(parsed.getTime()) ||
+    parsed.toISOString() !== date
+  ) {
     throw new Error(`${label} must be a valid ISO date`)
   }
   return date
@@ -68,9 +79,12 @@ const parseTag = (value: unknown, index: number): Tag => {
   const item = requireRecord(value, `Tag ${index + 1}`)
   const prefix = `Tag ${index + 1}`
 
+  const name = requireString(item.name, `${prefix} name`)
+  if (!name.trim()) throw new Error(`${prefix} name cannot be blank`)
+
   return {
     id: requireString(item.id, `${prefix} id`),
-    name: requireString(item.name, `${prefix} name`),
+    name,
     system: requireBoolean(item.system, `${prefix} system`),
     createdAt: requireIsoDate(item.createdAt, `${prefix} createdAt`),
     updatedAt: requireIsoDate(item.updatedAt, `${prefix} updatedAt`),
@@ -134,7 +148,7 @@ export const validateBackup = (value: unknown): BackupV1 => {
     'Tag IDs',
   )
   requireUnique(
-    tags.map(({ name }) => name.trim().toLocaleLowerCase()),
+    tags.map(({ name }) => normalizeTagKey(name)),
     'Tag names',
   )
   requireUnique(

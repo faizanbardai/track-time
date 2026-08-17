@@ -46,11 +46,11 @@ export const EventBottomBar = ({
   const customTags = tags.filter(({ id }) => id !== ALL_TAG_ID)
 
   return (
-    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-20 w-[calc(100%-2rem)] max-w-[1168px] -translate-x-1/2">
+    <div className="fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 z-20 w-[calc(100%-1rem)] max-w-[1184px] -translate-x-1/2">
       <Button
         asChild
         size="icon"
-        className="absolute right-2 bottom-9 z-10 size-14 rounded-full shadow-lg"
+        className="absolute right-2 bottom-16 z-10 size-14 rounded-full shadow-lg"
       >
         <Link
           href={PATHS.EVENT}
@@ -74,7 +74,7 @@ export const EventBottomBar = ({
             />
           </div>
         )}
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-2 pr-20 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {customTags.map((tag) => (
             <TagButton
               key={tag.id}

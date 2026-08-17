@@ -1,6 +1,6 @@
 'use client'
 
-import { ChangeEvent, FormEvent, useState } from 'react'
+import { ChangeEvent, FormEvent, useRef, useState } from 'react'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,6 +21,8 @@ import {
   summarizeBackup,
 } from '@/helpers/indexedDB/backup'
 import type { BackupSummary, BackupV1 } from '@/types/backup'
+
+const MAX_BACKUP_FILE_BYTES = 50 * 1024 * 1024
 
 const getMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback
@@ -55,6 +57,8 @@ export const BackupAndRestore = () => {
   const [importing, setImporting] = useState(false)
   const [importMessage, setImportMessage] = useState<string | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileReadId = useRef(0)
 
   const handleExport = async (event: FormEvent) => {
     event.preventDefault()
@@ -88,7 +92,9 @@ export const BackupAndRestore = () => {
   }
 
   const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
     const file = event.target.files?.[0] ?? null
+    const readId = ++fileReadId.current
     setSelectedFile(file)
     setFileContents(null)
     setImportPassword('')
@@ -98,9 +104,19 @@ export const BackupAndRestore = () => {
     setImportMessage(null)
     if (!file) return
 
+    if (file.size > MAX_BACKUP_FILE_BYTES) {
+      setSelectedFile(null)
+      input.value = ''
+      setImportError('The selected backup is larger than the 50 MB limit.')
+      return
+    }
+
     try {
-      setFileContents(await file.text())
+      const contents = await file.text()
+      if (readId !== fileReadId.current) return
+      setFileContents(contents)
     } catch (error) {
+      if (readId !== fileReadId.current) return
       setImportError(getMessage(error, 'Unable to read the selected file.'))
     }
   }
@@ -144,6 +160,8 @@ export const BackupAndRestore = () => {
       setSummary(null)
       setSelectedFile(null)
       setFileContents(null)
+      fileReadId.current += 1
+      if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (error) {
       setImportError(
         `${getMessage(error, 'Unable to restore the backup.')} Your existing data was not changed.`,
@@ -229,7 +247,7 @@ export const BackupAndRestore = () => {
           <div className="grid gap-2">
             <Label htmlFor="backup-file">Encrypted backup file</Label>
             <Input
-              key={selectedFile?.name ?? 'empty'}
+              ref={fileInputRef}
               id="backup-file"
               type="file"
               accept="application/json,.json"

@@ -89,7 +89,7 @@ export const AppHeader = () => {
   return (
     <>
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center gap-3 px-4">
+        <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center gap-3 px-2">
           <Button
             ref={triggerRef}
             type="button"
@@ -166,7 +166,7 @@ export const AppHeader = () => {
                     'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring',
                     active && 'bg-accent text-accent-foreground',
                   )}
-                  onClick={() => closeDrawer(false)}
+                  onClick={() => closeDrawer()}
                 >
                   <Icon aria-hidden="true" className="size-5" />
                   {item.label}

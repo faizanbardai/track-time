@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 
 export default function Home() {
   return (
-    <main className="grid gap-3 pb-28">
+    <main className="grid gap-3 pb-40">
       <Suspense
         fallback={
           <div className="text-center text-muted-foreground py-12">
