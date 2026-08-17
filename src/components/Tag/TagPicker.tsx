@@ -83,7 +83,7 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
           {selectedNames.map((name) => (
             <span
               key={normalizeTagKey(name)}
-              className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground"
+              className="inline-flex items-center gap-1 rounded-full bg-tag px-3 py-1 text-sm font-medium text-tag-foreground"
             >
               {name}
               <button
