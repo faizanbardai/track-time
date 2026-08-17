@@ -40,7 +40,7 @@ const DeleteEvent = ({ eventId }: DeleteEventProps) => {
       >
         {loading ? 'Deleting...' : 'Delete Event'}
       </Button>
-      {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
+      {error && <span className="mt-1 text-xs text-destructive">{error}</span>}
     </div>
   )
 }

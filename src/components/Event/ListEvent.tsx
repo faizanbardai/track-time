@@ -21,13 +21,15 @@ export const ListEvent = ({ event, dragHandle }: ListEventProps) => {
 
   return (
     <Card
-      className="cursor-pointer gap-0 py-0 transition-colors hover:bg-accent"
+      className="cursor-pointer gap-0 py-0 transition-colors hover:border-primary/30 hover:bg-accent"
       onClick={handleClick}
     >
       <div className="flex items-center gap-1 px-3 py-2.5">
         <div className="min-w-0 flex-1">
-          <CardTitle className="truncate text-base">{event.title}</CardTitle>
-          <div className="mt-1 text-sm">
+          <CardTitle className="truncate text-base tracking-tight">
+            {event.title}
+          </CardTitle>
+          <div className="mt-1 font-mono text-sm font-semibold tabular-nums text-timer">
             <Counter event={event} />
           </div>
           <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
@@ -39,7 +41,7 @@ export const ListEvent = ({ event, dragHandle }: ListEventProps) => {
                 {displayTags.map((tag) => (
                   <span
                     key={tag.id}
-                    className="rounded bg-secondary px-1.5 py-0.5 text-xs text-secondary-foreground"
+                    className="rounded-full bg-tag px-2 py-0.5 text-xs font-medium text-tag-foreground"
                   >
                     {tag.name}
                   </span>
