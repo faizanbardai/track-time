@@ -87,28 +87,28 @@
 }
 
 .dark {
-  --background: #090e1a;
-  --foreground: #f8fafc;
-  --card: #111827;
-  --card-foreground: #f8fafc;
-  --popover: #111827;
-  --popover-foreground: #f8fafc;
-  --primary: #818cf8;
+  --background: #000000;
+  --foreground: #fafafa;
+  --card: #0a0a0a;
+  --card-foreground: #fafafa;
+  --popover: #0a0a0a;
+  --popover-foreground: #fafafa;
+  --primary: #a5b4fc;
   --primary-foreground: #111827;
-  --secondary: #1e293b;
-  --secondary-foreground: #e2e8f0;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #c7d2fe;
+  --secondary: #18181b;
+  --secondary-foreground: #e4e4e7;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #1e1b4b;
+  --accent-foreground: #e0e7ff;
   --destructive: #f87171;
-  --border: #263244;
-  --input: #334155;
-  --ring: #a5b4fc;
+  --border: #27272a;
+  --input: #3f3f46;
+  --ring: #c7d2fe;
   --timer: #5eead4;
-  --timer-soft: #134e4a;
-  --tag: #252b55;
-  --tag-foreground: #c7d2fe;
+  --timer-soft: #042f2e;
+  --tag: #312e81;
+  --tag-foreground: #e0e7ff;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
