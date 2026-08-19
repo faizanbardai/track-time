@@ -3,20 +3,49 @@
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { SortableEventItem } from './SortableEventItem'
+import { ListEvent } from '@/components/Event/ListEvent'
 import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
+import { useTagSwipeNavigation } from '@/components/Event/useTagSwipeNavigation'
+import type { EventWithTags } from '@/types/event'
+import { cn } from '@/lib/utils'
+import { useState } from 'react'
+
+const PreviewPanel = ({ events }: { events: EventWithTags[] }) => (
+  <div className="grid min-h-full content-start gap-2">
+    {events.map((event) => (
+      <ListEvent key={event.id} event={event} />
+    ))}
+  </div>
+)
 
 export const ListEvents = () => {
+  const [isSorting, setIsSorting] = useState(false)
   const {
     activeTagId,
     initialLoading,
     tagLoading,
     events,
+    eventsByTag,
     sensors,
     tags,
     selectTag,
     handleDragEnd,
   } = useListEvents()
+  const activeTagIndex = tags.findIndex(({ id }) => id === activeTagId)
+  const previousTagId = tags[activeTagIndex - 1]?.id
+  const nextTagId = tags[activeTagIndex + 1]?.id
+  const {
+    bind: swipeNavigation,
+    isSettling,
+    trackRef,
+  } = useTagSwipeNavigation({
+    activeTagId,
+    tags,
+    onSelectTag: selectTag,
+    disabled: isSorting,
+  })
+
   if (initialLoading) {
     return (
       <div className="col-span-full text-center text-muted-foreground py-12">
@@ -26,7 +55,10 @@ export const ListEvents = () => {
   }
 
   return (
-    <div className="grid gap-2" aria-busy={tagLoading}>
+    <div
+      className="grid h-full grid-rows-[auto_1fr] gap-2"
+      aria-busy={tagLoading}
+    >
       <div className="relative h-0.5 overflow-hidden rounded-full">
         {tagLoading && (
           <div
@@ -38,22 +70,63 @@ export const ListEvents = () => {
       <span className="sr-only" role="status" aria-live="polite">
         {tagLoading ? 'Loading events...' : ''}
       </span>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
+      <div
+        className={cn(
+          'h-full touch-pan-y overflow-x-clip',
+          isSettling && 'pointer-events-none',
+        )}
+        {...swipeNavigation}
       >
-        <SortableContext
-          items={events.map((event) => String(event.id))}
-          strategy={verticalListSortingStrategy}
+        <div
+          ref={trackRef}
+          className="relative h-full will-change-transform"
+          style={{ transform: 'translate3d(0, 0, 0)' }}
         >
-          <div className="grid grid-cols-1 gap-2">
-            {events.map((event) => (
-              <SortableEventItem key={event.id} event={event} />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+          {previousTagId && (
+            <div
+              key={previousTagId}
+              className="pointer-events-none absolute top-0 right-full h-full w-full"
+              aria-hidden="true"
+              inert
+            >
+              <PreviewPanel events={eventsByTag[previousTagId] ?? []} />
+            </div>
+          )}
+
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={() => setIsSorting(true)}
+            onDragCancel={() => setIsSorting(false)}
+            onDragEnd={(event) => {
+              setIsSorting(false)
+              void handleDragEnd(event)
+            }}
+          >
+            <SortableContext
+              items={events.map((event) => String(event.id))}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="grid min-h-full grid-cols-1 content-start gap-2">
+                {events.map((event) => (
+                  <SortableEventItem key={event.id} event={event} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+
+          {nextTagId && (
+            <div
+              key={nextTagId}
+              className="pointer-events-none absolute top-0 left-full h-full w-full"
+              aria-hidden="true"
+              inert
+            >
+              <PreviewPanel events={eventsByTag[nextTagId] ?? []} />
+            </div>
+          )}
+        </div>
+      </div>
       <EventBottomBar
         activeTagId={activeTagId}
         tags={tags}
