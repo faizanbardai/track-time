@@ -4,6 +4,8 @@ import { ALL_TAG_ID } from '@/helpers/indexedDB'
 import { Button } from '@/components/ui/button'
 import { PATHS } from '@/constants/paths'
 import type { Tag } from '@/types/event'
+import { useActiveTagPeek } from '@/components/Event/useActiveTagPeek'
+import { cn } from '@/lib/utils'
 
 interface EventBottomBarProps {
   activeTagId: string
@@ -25,14 +27,22 @@ const TagButton = ({
   return (
     <Button
       type="button"
-      variant={active ? 'default' : 'ghost'}
+      variant="ghost"
       size="sm"
-      className="shrink-0 rounded-full"
+      className="group h-11 min-w-11 shrink-0 scroll-mx-2 rounded-full px-1 py-0 hover:bg-transparent dark:hover:bg-transparent"
       aria-pressed={active}
-      disabled={active}
-      onClick={() => onSelectTag(tag.id)}
+      onClick={() => !active && onSelectTag(tag.id)}
     >
-      {tag.name}
+      <span
+        className={cn(
+          'inline-flex h-8 items-center rounded-full px-3 transition-colors',
+          active
+            ? 'bg-primary text-primary-foreground shadow-xs group-hover:bg-primary/90'
+            : 'group-hover:bg-accent group-hover:text-accent-foreground dark:group-hover:bg-accent/50',
+        )}
+      >
+        {tag.name}
+      </span>
     </Button>
   )
 }
@@ -44,6 +54,7 @@ export const EventBottomBar = ({
 }: EventBottomBarProps) => {
   const allTag = tags.find(({ id }) => id === ALL_TAG_ID)
   const customTags = tags.filter(({ id }) => id !== ALL_TAG_ID)
+  const tagScrollerRef = useActiveTagPeek(activeTagId)
 
   return (
     <div className="fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 z-20 w-[calc(100%-1rem)] max-w-[1184px] -translate-x-1/2">
@@ -74,7 +85,10 @@ export const EventBottomBar = ({
             />
           </div>
         )}
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div
+          ref={tagScrollerRef}
+          className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {customTags.map((tag) => (
             <TagButton
               key={tag.id}
