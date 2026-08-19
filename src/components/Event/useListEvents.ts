@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   PointerSensor,
   TouchSensor,
@@ -23,7 +23,10 @@ export const useListEvents = () => {
   const router = useRouter()
   const { dbReady } = useIndexedDB()
 
-  const [events, setEvents] = useState<EventWithTags[]>([])
+  const [eventsByTag, setEventsByTag] = useState<
+    Record<string, EventWithTags[]>
+  >({})
+  const eventsByTagRef = useRef<Record<string, EventWithTags[]>>({})
   const [tags, setTags] = useState<Tag[]>([])
   const [loadedTagId, setLoadedTagId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -33,6 +36,7 @@ export const useListEvents = () => {
     selectionReady,
     selectTag: persistActiveTag,
   } = useActiveTag(tags)
+  const events = eventsByTag[activeTagId] ?? []
 
   useEffect(() => {
     if (!dbReady) return
@@ -49,24 +53,56 @@ export const useListEvents = () => {
     if (!dbReady || !selectionReady) return
 
     let cancelled = false
-    setLoading(true)
-    listEventsByTag(activeTagId)
-      .then((loadedEvents) => {
-        if (cancelled) return
-        setEvents(loadedEvents)
-        setLoadedTagId(activeTagId)
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+    const activeIndex = tags.findIndex(({ id }) => id === activeTagId)
+    const adjacentTagIds = [
+      tags[activeIndex - 1]?.id,
+      tags[activeIndex + 1]?.id,
+    ]
+      .filter((tagId): tagId is string => Boolean(tagId))
+      .filter((tagId) => !(tagId in eventsByTagRef.current))
+
+    const cacheEvents = (tagId: string, loadedEvents: EventWithTags[]) => {
+      eventsByTagRef.current = {
+        ...eventsByTagRef.current,
+        [tagId]: loadedEvents,
+      }
+      setEventsByTag(eventsByTagRef.current)
+    }
+
+    const cachedEvents = eventsByTagRef.current[activeTagId]
+    if (cachedEvents) {
+      setLoadedTagId(activeTagId)
+      setLoading(false)
+    } else {
+      setLoading(true)
+      listEventsByTag(activeTagId)
+        .then((loadedEvents) => {
+          if (cancelled) return
+          cacheEvents(activeTagId, loadedEvents)
+          setLoadedTagId(activeTagId)
+        })
+        .catch((err) => {
+          if (!cancelled) setError(err.message)
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
+    }
+
+    adjacentTagIds.forEach((tagId) => {
+      listEventsByTag(tagId)
+        .then((loadedEvents) => {
+          if (!cancelled) cacheEvents(tagId, loadedEvents)
+        })
+        .catch((err) => {
+          if (!cancelled) setError(err.message)
+        })
+    })
 
     return () => {
       cancelled = true
     }
-  }, [activeTagId, dbReady, selectionReady])
+  }, [activeTagId, dbReady, selectionReady, tags])
 
   useEffect(() => {
     if (
@@ -81,7 +117,7 @@ export const useListEvents = () => {
   }, [activeTagId, dbReady, events.length, loadedTagId, loading, router])
 
   const selectTag = (tagId: string) => {
-    setLoading(true)
+    setLoading(!(tagId in eventsByTagRef.current))
     persistActiveTag(tagId)
   }
 
@@ -107,21 +143,25 @@ export const useListEvents = () => {
     const newIndex = events.findIndex((e) => String(e.id) === over.id)
     if (oldIndex === -1 || newIndex === -1) return
 
-    setEvents((items) => {
+    setEventsByTag((eventsByTag) => {
+      const items = eventsByTag[activeTagId] ?? []
       const ordered = arrayMove(items, oldIndex, newIndex)
+      const nextEventsByTag = { ...eventsByTag, [activeTagId]: ordered }
+      eventsByTagRef.current = nextEventsByTag
       reorderEventsInTag(
         activeTagId,
         ordered.map((e) => e.id),
       ).catch((err) => {
         setError(err.message)
       })
-      return ordered
+      return nextEventsByTag
     })
   }
 
   return {
     activeTagId,
     events,
+    eventsByTag,
     initialLoading: loading && loadedTagId === null,
     tagLoading: loading && loadedTagId !== null,
     error,

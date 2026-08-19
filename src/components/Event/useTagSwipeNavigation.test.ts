@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getAdjacentTagId,
   hasHorizontalSwipeIntent,
+  shouldCompleteTagSwipe,
 } from './useTagSwipeNavigation'
 
 describe('hasHorizontalSwipeIntent', () => {
@@ -11,6 +12,21 @@ describe('hasHorizontalSwipeIntent', () => {
 
   it('rejects diagonal movement that is too close to vertical', () => {
     expect(hasHorizontalSwipeIntent(80, 70)).toBe(false)
+  })
+})
+
+describe('shouldCompleteTagSwipe', () => {
+  it('completes a swipe after sufficient distance', () => {
+    expect(shouldCompleteTagSwipe(90, 10, 0.2, 360)).toBe(true)
+  })
+
+  it('completes a short, intentional fling', () => {
+    expect(shouldCompleteTagSwipe(30, 5, 0.6, 360)).toBe(true)
+  })
+
+  it('snaps back after a short or ambiguous drag', () => {
+    expect(shouldCompleteTagSwipe(30, 5, 0.2, 360)).toBe(false)
+    expect(shouldCompleteTagSwipe(90, 80, 0.8, 360)).toBe(false)
   })
 })
 
