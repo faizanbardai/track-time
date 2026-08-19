@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  PointerSensor,
+  KeyboardSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
+  type DragEndEvent,
 } from '@dnd-kit/core'
 import {
   ALL_TAG_ID,
@@ -15,7 +16,7 @@ import {
 import { EventWithTags, Tag } from '../../types/event'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { useRouter } from 'next/navigation'
-import { arrayMove } from '@dnd-kit/sortable'
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { PATHS } from '@/constants/paths'
 import { useActiveTag } from '@/components/Event/useActiveTag'
 
@@ -122,16 +123,19 @@ export const useListEvents = () => {
   }
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 4,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250,
+        delay: 300,
         tolerance: 8,
       },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     }),
   )
 

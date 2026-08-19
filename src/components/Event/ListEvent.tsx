@@ -3,14 +3,14 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { EventWithTags } from '@/types/event'
 import dayjs from 'dayjs'
 import { useRouter } from 'next/navigation'
-import { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface ListEventProps {
   event: EventWithTags
-  dragHandle?: ReactNode
+  draggable?: boolean
 }
 
-export const ListEvent = ({ event, dragHandle }: ListEventProps) => {
+export const ListEvent = ({ event, draggable = false }: ListEventProps) => {
   const router = useRouter()
   const displayEventDatetime = dayjs(event.datetime).format('DD MMM YYYY HH:mm')
   const displayTags = event.tags.filter((tag) => !tag.system)
@@ -21,7 +21,12 @@ export const ListEvent = ({ event, dragHandle }: ListEventProps) => {
 
   return (
     <Card
-      className="cursor-pointer gap-0 py-0 transition-colors hover:border-primary/30 hover:bg-accent"
+      className={cn(
+        'gap-0 py-0 transition-colors hover:border-primary/30 hover:bg-accent',
+        draggable
+          ? 'cursor-grab select-none active:cursor-grabbing'
+          : 'cursor-pointer',
+      )}
       onClick={handleClick}
     >
       <div className="flex items-center gap-1 px-3 py-2.5">
@@ -50,7 +55,6 @@ export const ListEvent = ({ event, dragHandle }: ListEventProps) => {
             )}
           </div>
         </div>
-        {dragHandle}
       </div>
     </Card>
   )

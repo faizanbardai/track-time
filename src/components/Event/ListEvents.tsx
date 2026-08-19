@@ -9,6 +9,7 @@ import { EventBottomBar } from '@/components/Event/EventBottomBar'
 import { useTagSwipeNavigation } from '@/components/Event/useTagSwipeNavigation'
 import type { EventWithTags } from '@/types/event'
 import { cn } from '@/lib/utils'
+import { useState } from 'react'
 
 const PreviewPanel = ({ events }: { events: EventWithTags[] }) => (
   <div className="grid min-h-full content-start gap-2">
@@ -19,6 +20,7 @@ const PreviewPanel = ({ events }: { events: EventWithTags[] }) => (
 )
 
 export const ListEvents = () => {
+  const [isSorting, setIsSorting] = useState(false)
   const {
     activeTagId,
     initialLoading,
@@ -41,6 +43,7 @@ export const ListEvents = () => {
     activeTagId,
     tags,
     onSelectTag: selectTag,
+    disabled: isSorting,
   })
 
   if (initialLoading) {
@@ -93,7 +96,12 @@ export const ListEvents = () => {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+            onDragStart={() => setIsSorting(true)}
+            onDragCancel={() => setIsSorting(false)}
+            onDragEnd={(event) => {
+              setIsSorting(false)
+              void handleDragEnd(event)
+            }}
           >
             <SortableContext
               items={events.map((event) => String(event.id))}

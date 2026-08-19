@@ -19,7 +19,7 @@ const EDGE_RESISTANCE = 0.18
 const SETTLE_DURATION = 260
 const CLICK_SUPPRESSION_DURATION = 500
 const INTERACTIVE_TARGET_SELECTOR =
-  'a, button, input, select, textarea, [role="button"], [data-swipe-navigation-ignore]'
+  'a, button, input, select, textarea, [role="button"]:not([data-swipe-navigation-drag-surface]), [data-swipe-navigation-ignore]'
 
 type SwipeDirection = 'next' | 'previous'
 
@@ -63,10 +63,12 @@ export const useTagSwipeNavigation = ({
   activeTagId,
   tags,
   onSelectTag,
+  disabled = false,
 }: {
   activeTagId: string
   tags: Tag[]
   onSelectTag: (tagId: string) => void
+  disabled?: boolean
 }) => {
   const pagerRef = useRef<HTMLElement | null>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -107,7 +109,7 @@ export const useTagSwipeNavigation = ({
     clearSettleTimer()
     updateTrack(0, false)
     setIsSettling(false)
-  }, [activeTagId, clearSettleTimer, updateTrack])
+  }, [activeTagId, clearSettleTimer, disabled, updateTrack])
 
   const suppressNextClick = useCallback(() => {
     clearClickSuppressionTimer()
@@ -145,7 +147,7 @@ export const useTagSwipeNavigation = ({
 
   const handleSwiping = useCallback(
     (swipe: SwipeEventData) => {
-      if (isSettling || isIgnoredTarget(swipe)) return
+      if (disabled || isSettling || isIgnoredTarget(swipe)) return
 
       if (!hasHorizontalSwipeIntent(swipe.absX, swipe.absY)) {
         updateTrack(0, false)
@@ -159,11 +161,16 @@ export const useTagSwipeNavigation = ({
         : swipe.deltaX * EDGE_RESISTANCE
       updateTrack(offset, false)
     },
-    [activeTagId, isIgnoredTarget, isSettling, tags, updateTrack],
+    [activeTagId, disabled, isIgnoredTarget, isSettling, tags, updateTrack],
   )
 
   const handleSwiped = useCallback(
     (swipe: SwipeEventData) => {
+      if (disabled) {
+        updateTrack(0, false)
+        return
+      }
+
       if (isIgnoredTarget(swipe)) {
         updateTrack(0, false)
         return
@@ -210,6 +217,7 @@ export const useTagSwipeNavigation = ({
     [
       activeTagId,
       clearSettleTimer,
+      disabled,
       isIgnoredTarget,
       onSelectTag,
       settleAtCenter,
