@@ -32,7 +32,7 @@ export const SortableEventItem = ({ event }: SortableEventItemProps) => {
       {...attributes}
       {...listeners}
     >
-      <MemoizedListEvent event={event} draggable />
+      <MemoizedListEvent event={event} liveCounter draggable />
     </div>
   )
 }

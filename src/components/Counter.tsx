@@ -1,9 +1,9 @@
 import { calculateTimeDiff } from '@/helpers/datetime/calculateTimeDiff'
 import { Event } from '@/types/event'
+import { Dayjs } from 'dayjs'
 import { useEventListClock } from '@/components/Event/EventListClock'
 
-export const Counter = ({ event }: { event: Event }) => {
-  const now = useEventListClock()
+export const Counter = ({ event, now }: { event: Event; now: Dayjs }) => {
   const timeDiff = calculateTimeDiff(event, event.datetime, now)
 
   const years = event.years ? <span>{timeDiff.years}Y </span> : null
@@ -18,4 +18,10 @@ export const Counter = ({ event }: { event: Event }) => {
       {years} {months} {days} {hours} {minutes} {seconds}
     </span>
   )
+}
+
+export const LiveCounter = ({ event }: { event: Event }) => {
+  const now = useEventListClock()
+
+  return <Counter event={event} now={now} />
 }

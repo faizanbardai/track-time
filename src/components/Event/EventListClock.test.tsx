@@ -2,7 +2,7 @@
 
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Counter } from '@/components/Counter'
+import { LiveCounter } from '@/components/Counter'
 import { EventListClock } from '@/components/Event/EventListClock'
 import { PreviewPanel } from '@/components/Event/ListEvents'
 import type { Event, EventWithTags } from '@/types/event'
@@ -30,6 +30,21 @@ const createEventWithTags = (id: string): EventWithTags => ({
   tags: [],
 })
 
+const ClockedCounters = () => {
+  return (
+    <>
+      <LiveCounter event={createEvent('one', '2024-12-31T23:59:59.000Z')} />
+      <LiveCounter event={createEvent('two', '2024-12-31T23:59:59.000Z')} />
+    </>
+  )
+}
+
+const ClockedCounter = () => {
+  return (
+    <LiveCounter event={createEvent('future', '2025-01-01T00:00:02.000Z')} />
+  )
+}
+
 describe('EventListClock', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -44,8 +59,7 @@ describe('EventListClock', () => {
   it('uses one interval for multiple counters and updates them together', () => {
     render(
       <EventListClock>
-        <Counter event={createEvent('one', '2024-12-31T23:59:59.000Z')} />
-        <Counter event={createEvent('two', '2024-12-31T23:59:59.000Z')} />
+        <ClockedCounters />
       </EventListClock>,
     )
 
@@ -62,7 +76,7 @@ describe('EventListClock', () => {
   it('updates a counter after a future datetime is reached', () => {
     render(
       <EventListClock>
-        <Counter event={createEvent('future', '2025-01-01T00:00:02.000Z')} />
+        <ClockedCounter />
       </EventListClock>,
     )
 
@@ -75,11 +89,21 @@ describe('EventListClock', () => {
     expect(screen.getByText('1s')).toBeTruthy()
   })
 
-  it('renders preview events without live counters or subscriptions', () => {
-    render(<PreviewPanel events={[createEventWithTags('preview')]} />)
+  it('renders preview counters without live subscriptions', () => {
+    const events = [createEventWithTags('preview')]
+    const { rerender } = render(<PreviewPanel events={events} />)
 
     expect(screen.getByText('Event preview')).toBeTruthy()
-    expect(screen.queryByText('0s')).toBeNull()
+    expect(screen.getByText('0s')).toBeTruthy()
+
+    act(() => {
+      vi.advanceTimersByTime(3000)
+    })
+
+    expect(screen.getByText('0s')).toBeTruthy()
     expect(vi.getTimerCount()).toBe(0)
+
+    rerender(<PreviewPanel events={[createEventWithTags('preview')]} />)
+    expect(screen.getByText('3s')).toBeTruthy()
   })
 })
