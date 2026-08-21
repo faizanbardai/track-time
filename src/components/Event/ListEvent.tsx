@@ -1,16 +1,24 @@
-import { Counter } from '@/components/Counter'
+import { Counter, LiveCounter } from '@/components/Counter'
 import { Card, CardTitle } from '@/components/ui/card'
 import { EventWithTags } from '@/types/event'
-import dayjs from 'dayjs'
+import dayjs, { Dayjs } from 'dayjs'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { memo } from 'react'
 
 interface ListEventProps {
   event: EventWithTags
+  now?: Dayjs
+  liveCounter?: boolean
   draggable?: boolean
 }
 
-export const ListEvent = ({ event, draggable = false }: ListEventProps) => {
+export const ListEvent = ({
+  event,
+  now,
+  liveCounter = false,
+  draggable = false,
+}: ListEventProps) => {
   const router = useRouter()
   const displayEventDatetime = dayjs(event.datetime).format('DD MMM YYYY HH:mm')
   const displayTags = event.tags.filter((tag) => !tag.system)
@@ -34,8 +42,12 @@ export const ListEvent = ({ event, draggable = false }: ListEventProps) => {
           <CardTitle className="truncate text-base tracking-tight">
             {event.title}
           </CardTitle>
-          <div className="mt-1 font-mono text-sm font-semibold tabular-nums text-timer">
-            <Counter event={event} />
+          <div className="mt-1 min-h-5 font-mono text-sm font-semibold tabular-nums text-timer">
+            {liveCounter ? (
+              <LiveCounter event={event} />
+            ) : now ? (
+              <Counter event={event} now={now} />
+            ) : null}
           </div>
           <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
             <span className="text-xs text-muted-foreground">
@@ -59,3 +71,5 @@ export const ListEvent = ({ event, draggable = false }: ListEventProps) => {
     </Card>
   )
 }
+
+export const MemoizedListEvent = memo(ListEvent)

@@ -2,24 +2,42 @@
 
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import dayjs from 'dayjs'
 import { SortableEventItem } from './SortableEventItem'
-import { ListEvent } from '@/components/Event/ListEvent'
+import { MemoizedListEvent } from '@/components/Event/ListEvent'
+import { EventListClock } from '@/components/Event/EventListClock'
 import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
 import { useTagSwipeNavigation } from '@/components/Event/useTagSwipeNavigation'
 import type { EventWithTags } from '@/types/event'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-const PreviewPanel = ({ events }: { events: EventWithTags[] }) => (
-  <div className="grid min-h-full content-start gap-2">
-    {events.map((event) => (
-      <ListEvent key={event.id} event={event} />
-    ))}
-  </div>
-)
+export const PreviewPanel = ({ events }: { events: EventWithTags[] }) => {
+  const [now, setNow] = useState(() => dayjs())
+
+  useEffect(() => {
+    setNow(dayjs())
+  }, [events])
+
+  return (
+    <div className="grid min-h-full content-start gap-2">
+      {events.map((event) => (
+        <MemoizedListEvent key={event.id} event={event} now={now} />
+      ))}
+    </div>
+  )
+}
 
 export const ListEvents = () => {
+  return (
+    <EventListClock>
+      <ListEventsContent />
+    </EventListClock>
+  )
+}
+
+const ListEventsContent = () => {
   const [isSorting, setIsSorting] = useState(false)
   const {
     activeTagId,
@@ -103,16 +121,7 @@ export const ListEvents = () => {
               void handleDragEnd(event)
             }}
           >
-            <SortableContext
-              items={events.map((event) => String(event.id))}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="grid min-h-full grid-cols-1 content-start gap-2">
-                {events.map((event) => (
-                  <SortableEventItem key={event.id} event={event} />
-                ))}
-              </div>
-            </SortableContext>
+            <ActiveEventList events={events} />
           </DndContext>
 
           {nextTagId && (
@@ -133,5 +142,20 @@ export const ListEvents = () => {
         onSelectTag={selectTag}
       />
     </div>
+  )
+}
+
+const ActiveEventList = ({ events }: { events: EventWithTags[] }) => {
+  return (
+    <SortableContext
+      items={events.map((event) => String(event.id))}
+      strategy={verticalListSortingStrategy}
+    >
+      <div className="grid min-h-full grid-cols-1 content-start gap-2">
+        {events.map((event) => (
+          <SortableEventItem key={event.id} event={event} />
+        ))}
+      </div>
+    </SortableContext>
   )
 }

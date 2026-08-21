@@ -1,4 +1,4 @@
-import { ListEvent } from '@/components/Event/ListEvent'
+import { MemoizedListEvent } from '@/components/Event/ListEvent'
 import { EventWithTags } from '@/types/event'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -32,7 +32,7 @@ export const SortableEventItem = ({ event }: SortableEventItemProps) => {
       {...attributes}
       {...listeners}
     >
-      <ListEvent event={event} draggable />
+      <MemoizedListEvent event={event} liveCounter draggable />
     </div>
   )
 }
