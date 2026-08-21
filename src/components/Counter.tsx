@@ -1,17 +1,10 @@
-import { useEffect, useState } from 'react'
 import { calculateTimeDiff } from '@/helpers/datetime/calculateTimeDiff'
 import { Event } from '@/types/event'
+import { useEventListClock } from '@/components/Event/EventListClock'
 
 export const Counter = ({ event }: { event: Event }) => {
-  const [timeDiff, setTimeDiff] = useState(calculateTimeDiff(event))
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeDiff(calculateTimeDiff(event))
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [event])
+  const now = useEventListClock()
+  const timeDiff = calculateTimeDiff(event, event.datetime, now)
 
   const years = event.years ? <span>{timeDiff.years}Y </span> : null
   const months = event.months ? <span>{timeDiff.months}M </span> : null

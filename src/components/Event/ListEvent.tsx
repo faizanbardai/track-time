@@ -4,13 +4,19 @@ import { EventWithTags } from '@/types/event'
 import dayjs from 'dayjs'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { memo } from 'react'
 
 interface ListEventProps {
   event: EventWithTags
   draggable?: boolean
+  showCounter?: boolean
 }
 
-export const ListEvent = ({ event, draggable = false }: ListEventProps) => {
+export const ListEvent = ({
+  event,
+  draggable = false,
+  showCounter = true,
+}: ListEventProps) => {
   const router = useRouter()
   const displayEventDatetime = dayjs(event.datetime).format('DD MMM YYYY HH:mm')
   const displayTags = event.tags.filter((tag) => !tag.system)
@@ -34,9 +40,11 @@ export const ListEvent = ({ event, draggable = false }: ListEventProps) => {
           <CardTitle className="truncate text-base tracking-tight">
             {event.title}
           </CardTitle>
-          <div className="mt-1 font-mono text-sm font-semibold tabular-nums text-timer">
-            <Counter event={event} />
-          </div>
+          {showCounter && (
+            <div className="mt-1 font-mono text-sm font-semibold tabular-nums text-timer">
+              <Counter event={event} />
+            </div>
+          )}
           <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
             <span className="text-xs text-muted-foreground">
               {displayEventDatetime}
@@ -59,3 +67,5 @@ export const ListEvent = ({ event, draggable = false }: ListEventProps) => {
     </Card>
   )
 }
+
+export const MemoizedListEvent = memo(ListEvent)
