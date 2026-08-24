@@ -5,6 +5,7 @@ import {
   EventWithTags,
   Tag,
   TagEventOrder,
+  TagOrder,
   TagWithUsage,
 } from '@/types/event'
 
@@ -23,6 +24,7 @@ class TrackTimeDB extends Dexie {
   events!: Table<Event, string>
   tags!: Table<Tag, string>
   tagEventOrder!: Table<TagEventOrder, string>
+  tagOrder!: Table<TagOrder, string>
 
   constructor() {
     super('track-time-local')
@@ -32,6 +34,13 @@ class TrackTimeDB extends Dexie {
       tags: '&id, &name, system, createdAt, updatedAt',
       tagEventOrder:
         '&id, tagId, eventId, [tagId+sortOrder], [tagId+eventId], createdAt, updatedAt',
+    })
+    this.version(3).stores({
+      events: '&id, datetime, createdAt, updatedAt',
+      tags: '&id, &name, system, createdAt, updatedAt',
+      tagEventOrder:
+        '&id, tagId, eventId, [tagId+sortOrder], [tagId+eventId], createdAt, updatedAt',
+      tagOrder: '&id',
     })
   }
 }
@@ -98,6 +107,38 @@ export const ensureSystemTags = async (): Promise<Tag> => {
   return allTag
 }
 
+const sortTagsAlphabetically = (tags: Tag[]) =>
+  [...tags].sort((first, second) => first.name.localeCompare(second.name))
+
+const getCustomTagOrder = async (tags: Tag[]) => {
+  const customTags = tags.filter((tag) => !tag.system)
+  const saved = await db.tagOrder.get('custom')
+  const customIds = new Set(customTags.map((tag) => tag.id))
+  const savedIds = saved?.tagIds.filter((id) => customIds.has(id)) ?? []
+  const savedIdSet = new Set(savedIds)
+  const missingTags = sortTagsAlphabetically(
+    customTags.filter((tag) => !savedIdSet.has(tag.id)),
+  )
+  const tagIds = [...savedIds, ...missingTags.map((tag) => tag.id)]
+
+  if (!saved || tagIds.length !== saved.tagIds.length) {
+    await db.tagOrder.put({ id: 'custom', tagIds })
+  }
+  return tagIds
+}
+
+export const reorderTags = async (tagIds: string[]) => {
+  await db.tagOrder.put({ id: 'custom', tagIds })
+}
+
+const appendTagToOrder = async (tagId: string) => {
+  const order = await db.tagOrder.get('custom')
+  await db.tagOrder.put({
+    id: 'custom',
+    tagIds: [...(order?.tagIds ?? []), tagId],
+  })
+}
+
 const getNextSortOrder = async (tagId: string) => {
   const lastOrder = await db.tagEventOrder
     .where('[tagId+sortOrder]')
@@ -115,23 +156,26 @@ const getOrCreateTags = async (tagNames: string[]) => {
     existingTags.map((tag) => [normalizeTagKey(tag.name), tag]),
   )
 
-  const tags = await Promise.all(
-    normalizedNames.map(async (tagName) => {
-      const existing = tagsByName.get(normalizeTagKey(tagName))
-      if (existing) return existing
+  const tags: Tag[] = []
+  for (const tagName of normalizedNames) {
+    const existing = tagsByName.get(normalizeTagKey(tagName))
+    if (existing) {
+      tags.push(existing)
+      continue
+    }
 
-      const tag: Tag = {
-        id: uuid(),
-        name: tagName,
-        system: false,
-        createdAt: now,
-        updatedAt: now,
-      }
+    const tag: Tag = {
+      id: uuid(),
+      name: tagName,
+      system: false,
+      createdAt: now,
+      updatedAt: now,
+    }
 
-      await db.tags.add(tag)
-      return tag
-    }),
-  )
+    await db.tags.add(tag)
+    await appendTagToOrder(tag.id)
+    tags.push(tag)
+  }
 
   return [await ensureSystemTags(), ...tags]
 }
@@ -179,10 +223,12 @@ const attachTagsToEvents = async (
     .where('eventId')
     .anyOf(eventIds)
     .toArray()
-  const tags = await db.tags.bulkGet(orders.map((order) => order.tagId))
+  const tags = await listTags()
   const tagsById = new Map(
     tags.filter((tag): tag is Tag => Boolean(tag)).map((tag) => [tag.id, tag]),
   )
+  const tagOrder = tags.filter(({ system }) => !system).map(({ id }) => id)
+  const tagOrderIndex = new Map(tagOrder.map((tagId, index) => [tagId, index]))
   const tagsByEventId = orders.reduce<Map<string, Tag[]>>((map, order) => {
     const tag = tagsById.get(order.tagId)
     if (!tag) return map
@@ -195,7 +241,10 @@ const attachTagsToEvents = async (
     ...event,
     tags: (tagsByEventId.get(event.id) ?? []).sort((first, second) => {
       if (first.system !== second.system) return first.system ? -1 : 1
-      return first.name.localeCompare(second.name)
+      return (
+        (tagOrderIndex.get(first.id) ?? Number.MAX_SAFE_INTEGER) -
+        (tagOrderIndex.get(second.id) ?? Number.MAX_SAFE_INTEGER)
+      )
     }),
   }))
 }
@@ -203,11 +252,12 @@ const attachTagsToEvents = async (
 export const listTags = async (): Promise<Tag[]> => {
   await ensureSystemTags()
   const tags = await db.tags.toArray()
-
-  return tags.sort((first, second) => {
-    if (first.system !== second.system) return first.system ? -1 : 1
-    return first.name.localeCompare(second.name)
-  })
+  const customTagIds = await getCustomTagOrder(tags)
+  const tagsById = new Map(tags.map((tag) => [tag.id, tag]))
+  return [
+    tagsById.get(ALL_TAG_ID),
+    ...customTagIds.map((id) => tagsById.get(id)),
+  ].filter((tag): tag is Tag => Boolean(tag))
 }
 
 export const listTagsWithUsage = async (): Promise<TagWithUsage[]> => {
@@ -229,7 +279,7 @@ export const listTagsWithUsage = async (): Promise<TagWithUsage[]> => {
 export const createTag = async (name: string): Promise<Tag> => {
   const normalized = validateTagName(name)
 
-  return db.transaction('rw', db.tags, async () => {
+  return db.transaction('rw', db.tags, db.tagOrder, async () => {
     const tags = await db.tags.toArray()
     const existing = tags.find(
       (tag) => normalizeTagKey(tag.name) === normalizeTagKey(normalized),
@@ -245,6 +295,7 @@ export const createTag = async (name: string): Promise<Tag> => {
       updatedAt: now,
     }
     await db.tags.add(tag)
+    await appendTagToOrder(tag.id)
     return tag
   })
 }
@@ -277,18 +328,31 @@ export const renameTag = async (tagId: string, name: string): Promise<void> => {
 export const deleteTag = async (tagId: string): Promise<void> => {
   if (tagId === ALL_TAG_ID) throw new Error('The system tag cannot be deleted')
 
-  await db.transaction('rw', db.tags, db.tagEventOrder, async () => {
-    const tag = await db.tags.get(tagId)
-    if (!tag) return
-    if (tag.system) throw new Error('System tags cannot be deleted')
+  await db.transaction(
+    'rw',
+    db.tags,
+    db.tagEventOrder,
+    db.tagOrder,
+    async () => {
+      const tag = await db.tags.get(tagId)
+      if (!tag) return
+      if (tag.system) throw new Error('System tags cannot be deleted')
 
-    const assignments = await db.tagEventOrder
-      .where('tagId')
-      .equals(tagId)
-      .toArray()
-    await db.tagEventOrder.bulkDelete(assignments.map((item) => item.id))
-    await db.tags.delete(tagId)
-  })
+      const assignments = await db.tagEventOrder
+        .where('tagId')
+        .equals(tagId)
+        .toArray()
+      await db.tagEventOrder.bulkDelete(assignments.map((item) => item.id))
+      await db.tags.delete(tagId)
+      const order = await db.tagOrder.get('custom')
+      if (order) {
+        await db.tagOrder.put({
+          id: 'custom',
+          tagIds: order.tagIds.filter((id) => id !== tagId),
+        })
+      }
+    },
+  )
 }
 
 export const listEventsByTag = async (
@@ -337,6 +401,7 @@ export const saveEvent = async (
     db.events,
     db.tags,
     db.tagEventOrder,
+    db.tagOrder,
     async () => {
       const existing = await db.events.get(event.id)
       const now = new Date().toISOString()

@@ -34,6 +34,16 @@ const navigation = [
 
 export const AppHeader = () => {
   const pathname = usePathname()
+  const pageTitle =
+    pathname === PATHS.TAGS
+      ? 'Manage tags'
+      : pathname === PATHS.DATA
+        ? 'Backup & restore'
+        : pathname === PATHS.EVENT
+          ? 'New event'
+          : pathname.startsWith(`${PATHS.EVENT}/`)
+            ? 'Edit event'
+            : 'Track Time'
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const drawerRef = useRef<HTMLElement>(null)
@@ -104,7 +114,7 @@ export const AppHeader = () => {
             <Menu aria-hidden="true" />
           </Button>
           <Link href={PATHS.HOME} className="font-semibold tracking-tight">
-            Track Time
+            {pageTitle}
           </Link>
         </div>
       </header>

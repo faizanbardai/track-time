@@ -1,5 +1,12 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { db, listEventsByTag, normalizeTagKey } from '@/helpers/indexedDB'
+import {
+  db,
+  listEventsByTag,
+  listTags,
+  normalizeTagKey,
+  reorderTags,
+  saveEvent,
+} from '@/helpers/indexedDB'
 import {
   createBackup,
   decryptBackup,
@@ -63,6 +70,7 @@ const importedBackup = (): BackupV1 => ({
   data: {
     events: [event('event-1', 'First'), event('event-2', 'Second')],
     tags: [tag('all', 'All', true), tag('work', 'Work')],
+    tagOrder: ['work'],
     tagEventOrder: [
       order('all', 'event-1', 1),
       order('all', 'event-2', 0),
@@ -83,6 +91,8 @@ const readDatabase = async () => ({
   tags: await db.tags.toArray(),
   tagEventOrder: await db.tagEventOrder.toArray(),
 })
+
+const readTagOrder = async () => (await db.tagOrder.get('custom'))?.tagIds
 
 describe('backup and restore', () => {
   beforeEach(async () => {
@@ -188,7 +198,11 @@ describe('backup and restore', () => {
 
     await restoreBackup(replacement)
 
-    expect(await readDatabase()).toEqual(replacement.data)
+    expect(await readDatabase()).toEqual({
+      events: replacement.data.events,
+      tags: replacement.data.tags,
+      tagEventOrder: replacement.data.tagEventOrder,
+    })
     expect((await listEventsByTag('all')).map(({ id }) => id)).toEqual([
       'event-2',
       'event-1',
@@ -197,6 +211,46 @@ describe('backup and restore', () => {
       'event-1',
       'event-2',
     ])
+    expect(await readTagOrder()).toEqual(['work'])
+  })
+
+  it('appends multiple newly created event tags without losing their order', async () => {
+    await db.tags.add(tag('all', 'All', true))
+
+    await saveEvent(event('new-event', 'New event'), ['Zulu', 'Alpha'])
+
+    expect((await listTags()).map(({ name }) => name)).toEqual([
+      'All',
+      'Zulu',
+      'Alpha',
+    ])
+  })
+
+  it('persists an explicitly reordered tag list', async () => {
+    await db.tags.bulkAdd([
+      tag('all', 'All', true),
+      tag('first', 'First'),
+      tag('second', 'Second'),
+    ])
+
+    await listTags()
+    await reorderTags(['second', 'first'])
+
+    expect((await listTags()).map(({ id }) => id)).toEqual([
+      'all',
+      'second',
+      'first',
+    ])
+  })
+
+  it('falls back to alphabetical order for legacy backups', async () => {
+    const legacy = importedBackup()
+    delete legacy.data.tagOrder
+    legacy.data.tags.push(tag('personal', 'Personal'))
+
+    await restoreBackup(legacy)
+
+    expect(await readTagOrder()).toEqual(['personal', 'work'])
   })
 
   it('rolls back every table when a write fails mid-restore', async () => {

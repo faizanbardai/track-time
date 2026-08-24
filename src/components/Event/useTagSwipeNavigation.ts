@@ -106,10 +106,11 @@ export const useTagSwipeNavigation = ({
   }, [])
 
   useLayoutEffect(() => {
+    if (isSettling) return
     clearSettleTimer()
     updateTrack(0, false)
     setIsSettling(false)
-  }, [activeTagId, clearSettleTimer, disabled, updateTrack])
+  }, [activeTagId, clearSettleTimer, disabled, isSettling, updateTrack])
 
   const suppressNextClick = useCallback(() => {
     clearClickSuppressionTimer()
@@ -209,9 +210,11 @@ export const useTagSwipeNavigation = ({
       clearSettleTimer()
       setIsSettling(true)
       updateTrack(direction === 'next' ? -viewportWidth : viewportWidth, true)
+      onSelectTag(adjacentTagId)
       settleTimerRef.current = setTimeout(() => {
         settleTimerRef.current = null
-        onSelectTag(adjacentTagId)
+        updateTrack(0, false)
+        setIsSettling(false)
       }, SETTLE_DURATION)
     },
     [
