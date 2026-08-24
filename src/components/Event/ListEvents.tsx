@@ -14,7 +14,13 @@ import type { EventWithTags } from '@/types/event'
 import { cn } from '@/lib/utils'
 import { useCallback, useEffect, useState } from 'react'
 
-export const PreviewPanel = ({ events }: { events: EventWithTags[] }) => {
+export const PreviewPanel = ({
+  events,
+  activeTagId,
+}: {
+  events: EventWithTags[]
+  activeTagId?: string
+}) => {
   const [now, setNow] = useState(() => dayjs())
 
   useEffect(() => {
@@ -24,7 +30,12 @@ export const PreviewPanel = ({ events }: { events: EventWithTags[] }) => {
   return (
     <div className="grid min-h-full content-start gap-2">
       {events.map((event) => (
-        <MemoizedListEvent key={event.id} event={event} now={now} />
+        <MemoizedListEvent
+          key={event.id}
+          event={event}
+          now={now}
+          activeTagId={activeTagId}
+        />
       ))}
     </div>
   )
@@ -120,7 +131,10 @@ const ListEventsContent = () => {
               aria-hidden="true"
               inert
             >
-              <PreviewPanel events={eventsByTag[previousTagId] ?? []} />
+              <PreviewPanel
+                events={eventsByTag[previousTagId] ?? []}
+                activeTagId={previousTagId}
+              />
             </div>
           )}
 
@@ -134,7 +148,7 @@ const ListEventsContent = () => {
               void handleDragEnd(event)
             }}
           >
-            <ActiveEventList events={events} />
+            <ActiveEventList events={events} activeTagId={activeTagId} />
           </DndContext>
 
           {nextTagId && (
@@ -144,7 +158,10 @@ const ListEventsContent = () => {
               aria-hidden="true"
               inert
             >
-              <PreviewPanel events={eventsByTag[nextTagId] ?? []} />
+              <PreviewPanel
+                events={eventsByTag[nextTagId] ?? []}
+                activeTagId={nextTagId}
+              />
             </div>
           )}
         </div>
@@ -158,7 +175,13 @@ const ListEventsContent = () => {
   )
 }
 
-const ActiveEventList = ({ events }: { events: EventWithTags[] }) => {
+const ActiveEventList = ({
+  events,
+  activeTagId,
+}: {
+  events: EventWithTags[]
+  activeTagId: string
+}) => {
   return (
     <SortableContext
       items={events.map((event) => String(event.id))}
@@ -166,7 +189,11 @@ const ActiveEventList = ({ events }: { events: EventWithTags[] }) => {
     >
       <div className="grid min-h-full grid-cols-1 content-start gap-2">
         {events.map((event) => (
-          <SortableEventItem key={event.id} event={event} />
+          <SortableEventItem
+            key={event.id}
+            event={event}
+            activeTagId={activeTagId}
+          />
         ))}
       </div>
     </SortableContext>
