@@ -5,9 +5,13 @@ import { CSS } from '@dnd-kit/utilities'
 
 interface SortableEventItemProps {
   event: EventWithTags
+  activeTagId: string
 }
 
-export const SortableEventItem = ({ event }: SortableEventItemProps) => {
+export const SortableEventItem = ({
+  event,
+  activeTagId,
+}: SortableEventItemProps) => {
   const {
     attributes,
     listeners,
@@ -32,7 +36,12 @@ export const SortableEventItem = ({ event }: SortableEventItemProps) => {
       {...attributes}
       {...listeners}
     >
-      <MemoizedListEvent event={event} liveCounter draggable />
+      <MemoizedListEvent
+        event={event}
+        liveCounter
+        draggable
+        activeTagId={activeTagId}
+      />
     </div>
   )
 }

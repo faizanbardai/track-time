@@ -11,6 +11,7 @@ interface ListEventProps {
   now?: Dayjs
   liveCounter?: boolean
   draggable?: boolean
+  activeTagId?: string
 }
 
 export const ListEvent = ({
@@ -18,10 +19,17 @@ export const ListEvent = ({
   now,
   liveCounter = false,
   draggable = false,
+  activeTagId,
 }: ListEventProps) => {
   const router = useRouter()
-  const displayEventDatetime = dayjs(event.datetime).format('DD MMM YYYY HH:mm')
-  const displayTags = event.tags.filter((tag) => !tag.system)
+  const eventDate = dayjs(event.datetime)
+  const displayEventDatetime =
+    eventDate.hour() === 0 && eventDate.minute() === 0
+      ? eventDate.format('DD MMM YYYY')
+      : eventDate.format('DD MMM YYYY HH:mm')
+  const displayTags = event.tags.filter(
+    (tag) => !tag.system && tag.id !== activeTagId,
+  )
 
   const handleClick = () => {
     router.push(`/event/${event.id}`)
@@ -37,36 +45,34 @@ export const ListEvent = ({
       )}
       onClick={handleClick}
     >
-      <div className="flex items-center gap-1 px-3 py-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0 px-4 py-4">
         <div className="min-w-0 flex-1">
-          <CardTitle className="truncate text-base tracking-tight">
+          <CardTitle className="truncate text-lg font-normal leading-tight">
             {event.title}
           </CardTitle>
-          <div className="mt-1 min-h-5 font-mono text-sm font-semibold tabular-nums text-timer">
-            {liveCounter ? (
-              <LiveCounter event={event} />
-            ) : now ? (
-              <Counter event={event} now={now} />
-            ) : null}
-          </div>
-          <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-            <span className="text-xs text-muted-foreground">
-              {displayEventDatetime}
-            </span>
-            {displayTags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {displayTags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="rounded-full bg-tag px-2 py-0.5 text-xs font-medium text-tag-foreground"
-                  >
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-            )}
+          <div className="mt-1 text-xs text-muted-foreground">
+            {displayEventDatetime}
           </div>
         </div>
+        <div className="min-w-[7.5rem] whitespace-nowrap text-right font-mono text-3xl font-semibold leading-none tracking-tight tabular-nums text-timer">
+          {liveCounter ? (
+            <LiveCounter event={event} />
+          ) : now ? (
+            <Counter event={event} now={now} />
+          ) : null}
+        </div>
+        {displayTags.length > 0 && (
+          <div className="col-span-full mt-1 flex flex-wrap gap-1">
+            {displayTags.map((tag) => (
+              <span
+                key={tag.id}
+                className="rounded-full bg-tag px-2 py-0.5 text-xs font-medium text-tag-foreground"
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </Card>
   )
