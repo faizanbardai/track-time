@@ -60,11 +60,16 @@ const requireIsoDate = (value: unknown, label: string) => {
 const parseEvent = (value: unknown, index: number): Event => {
   const item = requireRecord(value, `Event ${index + 1}`)
   const prefix = `Event ${index + 1}`
+  const endDate =
+    item.endDate === undefined
+      ? undefined
+      : requireIsoDate(item.endDate, `${prefix} endDate`)
 
   return {
     id: requireString(item.id, `${prefix} id`),
     title: requireString(item.title, `${prefix} title`),
     datetime: requireIsoDate(item.datetime, `${prefix} datetime`),
+    ...(endDate ? { endDate } : {}),
     seconds: requireBoolean(item.seconds, `${prefix} seconds`),
     minutes: requireBoolean(item.minutes, `${prefix} minutes`),
     hours: requireBoolean(item.hours, `${prefix} hours`),

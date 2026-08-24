@@ -1,4 +1,5 @@
 import { Counter, LiveCounter } from '@/components/Counter'
+import { calculateDuration } from '@/helpers/datetime/calculateTimeDiff'
 import { Card, CardTitle } from '@/components/ui/card'
 import { EventWithTags } from '@/types/event'
 import dayjs, { Dayjs } from 'dayjs'
@@ -27,6 +28,24 @@ export const ListEvent = ({
     eventDate.hour() === 0 && eventDate.minute() === 0
       ? eventDate.format('DD MMM YYYY')
       : eventDate.format('DD MMM YYYY HH:mm')
+  const endDate = event.endDate ? dayjs(event.endDate) : null
+  const displayEndDate = endDate?.format('DD MMM YYYY')
+  const duration = endDate
+    ? calculateDuration(event.datetime, event.endDate as string)
+    : null
+  const displayDuration = duration
+    ? duration.years > 0
+      ? `${duration.years}Y`
+      : duration.months > 0
+        ? `${duration.months}M`
+        : duration.days > 0
+          ? `${duration.days}D`
+          : duration.hours > 0
+            ? `${duration.hours}h`
+            : duration.minutes > 0
+              ? `${duration.minutes}m`
+              : `${duration.seconds}s`
+    : null
   const displayTags = event.tags.filter(
     (tag) => !tag.system && tag.id !== activeTagId,
   )
@@ -51,7 +70,16 @@ export const ListEvent = ({
             {event.title}
           </CardTitle>
           <div className="mt-1 text-xs text-muted-foreground">
-            {displayEventDatetime}
+            {displayEndDate ? (
+              <>
+                {displayEndDate} <span aria-hidden="true">|</span>{' '}
+                <span className="font-mono tabular-nums">
+                  {displayDuration}
+                </span>
+              </>
+            ) : (
+              displayEventDatetime
+            )}
           </div>
         </div>
         <div className="min-w-[7.5rem] whitespace-nowrap text-right font-mono text-3xl font-semibold leading-none tracking-tight tabular-nums text-timer">

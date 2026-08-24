@@ -118,6 +118,21 @@ describe('backup and restore', () => {
     expect(backup.data.tagEventOrder).toEqual(source.data.tagEventOrder)
   })
 
+  it('preserves an event end date through validation and restore', async () => {
+    const source = importedBackup()
+    source.data.events[0].endDate = '2026-08-20T00:00:00.000Z'
+
+    expect(validateBackup(source).data.events[0].endDate).toBe(
+      source.data.events[0].endDate,
+    )
+
+    await restoreBackup(source)
+
+    await expect(db.events.get('event-1')).resolves.toMatchObject({
+      endDate: source.data.events[0].endDate,
+    })
+  })
+
   it('encrypts a backup and only decrypts it with the correct password', async () => {
     const source = importedBackup()
     const encrypted = await encryptBackup(

@@ -3,6 +3,7 @@
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LiveCounter } from '@/components/Counter'
+import { calculateDuration } from '@/helpers/datetime/calculateTimeDiff'
 import { EventListClock } from '@/components/Event/EventListClock'
 import { PreviewPanel } from '@/components/Event/ListEvents'
 import type { Event, EventWithTags } from '@/types/event'
@@ -11,10 +12,15 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 
-const createEvent = (id: string, datetime: string): Event => ({
+const createEvent = (
+  id: string,
+  datetime: string,
+  endDate?: string,
+): Event => ({
   id,
   title: `Event ${id}`,
   datetime,
+  ...(endDate ? { endDate } : {}),
   seconds: true,
   minutes: false,
   hours: false,
@@ -87,6 +93,32 @@ describe('EventListClock', () => {
     })
 
     expect(screen.getByText('1s')).toBeTruthy()
+  })
+
+  it('uses the end date as the live counter start when available', () => {
+    render(
+      <EventListClock>
+        <LiveCounter
+          event={createEvent(
+            'ended',
+            '2024-01-01T00:00:00.000Z',
+            '2024-12-31T23:59:59.000Z',
+          )}
+        />
+      </EventListClock>,
+    )
+
+    expect(screen.getByText('1s')).toBeTruthy()
+  })
+
+  it('calculates duration independently of the selected counter units', () => {
+    const duration = calculateDuration(
+      '2008-01-01T00:00:00.000Z',
+      '2012-12-31T00:00:00.000Z',
+    )
+
+    expect(duration.years).toBe(4)
+    expect(duration.months).toBe(11)
   })
 
   it('renders preview counters without live subscriptions', () => {

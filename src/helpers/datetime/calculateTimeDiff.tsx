@@ -2,6 +2,15 @@ import { TimeDiff } from '@/types/datetimeDiff'
 import { Event } from '@/types/event'
 import dayjs from 'dayjs'
 
+const allUnits = {
+  years: true,
+  months: true,
+  days: true,
+  hours: true,
+  minutes: true,
+  seconds: true,
+}
+
 export const calculateTimeDiff = (
   event: Event,
   past: string = event.datetime,
@@ -33,3 +42,6 @@ export const calculateTimeDiff = (
 
   return { years, months, days, hours, minutes, seconds }
 }
+
+export const calculateDuration = (start: string, end: string): TimeDiff =>
+  calculateTimeDiff({ ...allUnits } as Event, start, dayjs(end))
