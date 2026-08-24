@@ -21,6 +21,7 @@ import { formatTagNames } from '@/helpers/indexedDB'
 import { TagPicker } from '@/components/Tag/TagPicker'
 import Link from 'next/link'
 import { PATHS } from '@/constants/paths'
+import { ArrowLeft } from 'lucide-react'
 
 interface EventPageProps {
   event: EventWithTags | null
@@ -46,96 +47,104 @@ const CreateOrUpdateEvent = ({ event }: EventPageProps) => {
   const { onSubmit } = useEvent()
 
   return (
-    <Card>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardHeader>
-          <CardTitle>
-            {event?.id ? 'Edit Event' : 'Create a new event'}
-          </CardTitle>
-          <CardDescription>
-            Fill in the details below to create or update an event
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-6">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                {...register('title')}
-                id="title"
-                placeholder="Title"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="date">Date</Label>
-              <Input {...register('date')} id="date" type="date" required />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="time">Time</Label>
-              <Input {...register('time')} id="time" type="time" />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <Label>Tags</Label>
-                <Button
-                  asChild
-                  type="button"
-                  variant="link"
-                  className="h-auto p-0"
-                >
-                  <Link href={PATHS.TAGS}>Manage tags</Link>
-                </Button>
+    <div className="grid gap-4">
+      <Button asChild variant="outline" className="justify-self-start">
+        <Link href={PATHS.HOME}>
+          <ArrowLeft aria-hidden="true" />
+          Back to events
+        </Link>
+      </Button>
+      <Card>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <CardHeader>
+            <CardTitle>
+              {event?.id ? 'Edit Event' : 'Create a new event'}
+            </CardTitle>
+            <CardDescription>
+              Fill in the details below to create or update an event
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  {...register('title')}
+                  id="title"
+                  placeholder="Title"
+                  required
+                />
               </div>
-              <Controller
-                name="tags"
-                control={control}
-                render={({ field }) => (
-                  <TagPicker
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                  />
-                )}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Enable units</Label>
-              <div className="flex flex-wrap gap-4">
-                {units.map((unit) => (
-                  <label
-                    key={unit.name}
-                    htmlFor={unit.name}
-                    className="flex items-center gap-2"
+              <div className="grid gap-2">
+                <Label htmlFor="date">Date</Label>
+                <Input {...register('date')} id="date" type="date" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="time">Time</Label>
+                <Input {...register('time')} id="time" type="time" />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <Label>Tags</Label>
+                  <Button
+                    asChild
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0"
                   >
-                    <Controller
-                      name={unit.name as keyof EventFormData}
-                      control={control}
-                      render={({ field }) => (
-                        <Checkbox
-                          id={unit.name}
-                          checked={Boolean(field.value)}
-                          onCheckedChange={field.onChange}
-                          name={field.name}
-                          ref={field.ref}
-                        />
-                      )}
+                    <Link href={PATHS.TAGS}>Manage tags</Link>
+                  </Button>
+                </div>
+                <Controller
+                  name="tags"
+                  control={control}
+                  render={({ field }) => (
+                    <TagPicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
                     />
-                    {unit.label}
-                  </label>
-                ))}
+                  )}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Enable units</Label>
+                <div className="flex flex-wrap gap-4">
+                  {units.map((unit) => (
+                    <label
+                      key={unit.name}
+                      htmlFor={unit.name}
+                      className="flex items-center gap-2"
+                    >
+                      <Controller
+                        name={unit.name as keyof EventFormData}
+                        control={control}
+                        render={({ field }) => (
+                          <Checkbox
+                            id={unit.name}
+                            checked={Boolean(field.value)}
+                            onCheckedChange={field.onChange}
+                            name={field.name}
+                            ref={field.ref}
+                          />
+                        )}
+                      />
+                      {unit.label}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-        <CardFooter className="mt-6 flex justify-end gap-2">
-          <Button type="submit">
-            {event?.id ? 'Update Event' : 'Create Event'}
-          </Button>
-          {event?.id && <DeleteEvent eventId={event.id} />}
-        </CardFooter>
-      </form>
-    </Card>
+          </CardContent>
+          <CardFooter className="mt-6 flex justify-end gap-2">
+            <Button type="submit">
+              {event?.id ? 'Update Event' : 'Create Event'}
+            </Button>
+            {event?.id && <DeleteEvent eventId={event.id} />}
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
   )
 }
 

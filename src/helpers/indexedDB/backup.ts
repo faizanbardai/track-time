@@ -2,6 +2,7 @@ import {
   ALL_TAG_ID,
   db,
   ensureSystemTags,
+  listTags,
   normalizeTagKey,
 } from '@/helpers/indexedDB'
 import type { Event, Tag, TagEventOrder } from '@/types/event'
@@ -118,6 +119,16 @@ const requireUnique = (values: string[], label: string) => {
   }
 }
 
+const parseTagOrder = (value: unknown): string[] | undefined => {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value) || value.some((id) => typeof id !== 'string')) {
+    throw new Error('Backup tag order must be an array of IDs')
+  }
+  const tagIds = value as string[]
+  requireUnique(tagIds, 'Tag order')
+  return tagIds
+}
+
 export const validateBackup = (value: unknown): BackupV1 => {
   const root = requireRecord(value, 'Backup')
   if (root.schemaVersion !== BACKUP_SCHEMA_VERSION) {
@@ -138,6 +149,7 @@ export const validateBackup = (value: unknown): BackupV1 => {
   const events = data.events.map(parseEvent)
   const tags = data.tags.map(parseTag)
   const tagEventOrder = data.tagEventOrder.map(parseTagEventOrder)
+  const savedTagOrder = parseTagOrder(data.tagOrder)
 
   requireUnique(
     events.map(({ id }) => id),
@@ -197,10 +209,31 @@ export const validateBackup = (value: unknown): BackupV1 => {
     throw new Error('Every event must be assigned to the “All” system tag')
   }
 
+  const customTags = tags.filter(({ system }) => !system)
+  const customTagIds = new Set(customTags.map(({ id }) => id))
+  const tagOrder = savedTagOrder
+    ? savedTagOrder
+    : [...customTags]
+        .sort((first, second) => first.name.localeCompare(second.name))
+        .map(({ id }) => id)
+  if (
+    tagOrder.length !== customTags.length ||
+    tagOrder.some((tagId) => !customTagIds.has(tagId))
+  ) {
+    throw new Error(
+      'Backup tag order must contain every custom tag exactly once',
+    )
+  }
+
   return {
     schemaVersion: BACKUP_SCHEMA_VERSION,
     exportedAt,
-    data: { events, tags, tagEventOrder },
+    data: {
+      events,
+      tags,
+      tagEventOrder,
+      ...(savedTagOrder ? { tagOrder: savedTagOrder } : {}),
+    },
   }
 }
 
@@ -214,15 +247,18 @@ export const summarizeBackup = (backup: BackupV1): BackupSummary => ({
 
 export const createBackup = async (): Promise<BackupV1> => {
   await ensureSystemTags()
+  await listTags()
   const data = await db.transaction(
     'r',
     db.events,
     db.tags,
     db.tagEventOrder,
+    db.tagOrder,
     async () => ({
       events: await db.events.toArray(),
       tags: await db.tags.toArray(),
       tagEventOrder: await db.tagEventOrder.toArray(),
+      tagOrder: (await db.tagOrder.get('custom'))?.tagIds,
     }),
   )
 
@@ -430,22 +466,40 @@ export const decryptBackup = async (
 
 export const restoreBackup = async (backup: BackupV1): Promise<void> => {
   const validated = validateBackup(backup)
-  await db.transaction('rw', db.events, db.tags, db.tagEventOrder, async () => {
-    await Promise.all([
-      db.events.clear(),
-      db.tags.clear(),
-      db.tagEventOrder.clear(),
-    ])
-    if (validated.data.events.length) {
-      await db.events.bulkAdd(validated.data.events)
-    }
-    if (validated.data.tags.length) {
-      await db.tags.bulkAdd(validated.data.tags)
-    }
-    if (validated.data.tagEventOrder.length) {
-      await db.tagEventOrder.bulkAdd(validated.data.tagEventOrder)
-    }
-  })
+  const tagOrder =
+    validated.data.tagOrder ??
+    validated.data.tags
+      .filter(({ system }) => !system)
+      .sort((first, second) => first.name.localeCompare(second.name))
+      .map(({ id }) => id)
+  await db.transaction(
+    'rw',
+    db.events,
+    db.tags,
+    db.tagEventOrder,
+    db.tagOrder,
+    async () => {
+      await Promise.all([
+        db.events.clear(),
+        db.tags.clear(),
+        db.tagEventOrder.clear(),
+        db.tagOrder.clear(),
+      ])
+      if (validated.data.events.length) {
+        await db.events.bulkAdd(validated.data.events)
+      }
+      if (validated.data.tags.length) {
+        await db.tags.bulkAdd(validated.data.tags)
+      }
+      if (validated.data.tagEventOrder.length) {
+        await db.tagEventOrder.bulkAdd(validated.data.tagEventOrder)
+      }
+      await db.tagOrder.put({
+        id: 'custom',
+        tagIds: tagOrder,
+      })
+    },
+  )
 }
 
 export const backupFileName = (exportedAt: string) =>

@@ -63,11 +63,13 @@ export const useTagSwipeNavigation = ({
   activeTagId,
   tags,
   onSelectTag,
+  onSwipeCommit,
   disabled = false,
 }: {
   activeTagId: string
   tags: Tag[]
   onSelectTag: (tagId: string) => void
+  onSwipeCommit?: (tagId: string) => void
   disabled?: boolean
 }) => {
   const pagerRef = useRef<HTMLElement | null>(null)
@@ -106,10 +108,11 @@ export const useTagSwipeNavigation = ({
   }, [])
 
   useLayoutEffect(() => {
+    if (isSettling) return
     clearSettleTimer()
     updateTrack(0, false)
     setIsSettling(false)
-  }, [activeTagId, clearSettleTimer, disabled, updateTrack])
+  }, [activeTagId, clearSettleTimer, disabled, isSettling, updateTrack])
 
   const suppressNextClick = useCallback(() => {
     clearClickSuppressionTimer()
@@ -202,6 +205,7 @@ export const useTagSwipeNavigation = ({
 
       if (prefersReducedMotion()) {
         updateTrack(0, false)
+        onSwipeCommit?.(adjacentTagId)
         onSelectTag(adjacentTagId)
         return
       }
@@ -209,8 +213,11 @@ export const useTagSwipeNavigation = ({
       clearSettleTimer()
       setIsSettling(true)
       updateTrack(direction === 'next' ? -viewportWidth : viewportWidth, true)
+      onSwipeCommit?.(adjacentTagId)
       settleTimerRef.current = setTimeout(() => {
         settleTimerRef.current = null
+        updateTrack(0, false)
+        setIsSettling(false)
         onSelectTag(adjacentTagId)
       }, SETTLE_DURATION)
     },
@@ -219,6 +226,7 @@ export const useTagSwipeNavigation = ({
       clearSettleTimer,
       disabled,
       isIgnoredTarget,
+      onSwipeCommit,
       onSelectTag,
       settleAtCenter,
       suppressNextClick,

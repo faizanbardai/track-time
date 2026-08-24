@@ -10,6 +10,7 @@ export interface BackupV1 {
     events: Event[]
     tags: Tag[]
     tagEventOrder: TagEventOrder[]
+    tagOrder?: string[]
   }
 }
 

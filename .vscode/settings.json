@@ -6,6 +6,9 @@
     "/^npm exec -- tsc --noEmit$/": {
       "approve": true,
       "matchCommandLine": true
-    }
+    },
+    "npx tsc": true,
+    "npx eslint": true,
+    "npx prettier": true
   }
 }
