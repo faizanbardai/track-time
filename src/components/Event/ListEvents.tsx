@@ -9,9 +9,10 @@ import { EventListClock } from '@/components/Event/EventListClock'
 import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
 import { useTagSwipeNavigation } from '@/components/Event/useTagSwipeNavigation'
+import { ALL_TAG_ID } from '@/helpers/indexedDB'
 import type { EventWithTags } from '@/types/event'
 import { cn } from '@/lib/utils'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export const PreviewPanel = ({ events }: { events: EventWithTags[] }) => {
   const [now, setNow] = useState(() => dayjs())
@@ -39,6 +40,7 @@ export const ListEvents = () => {
 
 const ListEventsContent = () => {
   const [isSorting, setIsSorting] = useState(false)
+  const [displayedTagId, setDisplayedTagId] = useState(ALL_TAG_ID)
   const {
     activeTagId,
     initialLoading,
@@ -50,6 +52,16 @@ const ListEventsContent = () => {
     selectTag,
     handleDragEnd,
   } = useListEvents()
+  const handleSelectTag = useCallback(
+    (tagId: string) => {
+      setDisplayedTagId(tagId)
+      selectTag(tagId)
+    },
+    [selectTag],
+  )
+  useEffect(() => {
+    setDisplayedTagId(activeTagId)
+  }, [activeTagId])
   const activeTagIndex = tags.findIndex(({ id }) => id === activeTagId)
   const previousTagId = tags[activeTagIndex - 1]?.id
   const nextTagId = tags[activeTagIndex + 1]?.id
@@ -60,7 +72,8 @@ const ListEventsContent = () => {
   } = useTagSwipeNavigation({
     activeTagId,
     tags,
-    onSelectTag: selectTag,
+    onSelectTag: handleSelectTag,
+    onSwipeCommit: setDisplayedTagId,
     disabled: isSorting,
   })
 
@@ -137,9 +150,9 @@ const ListEventsContent = () => {
         </div>
       </div>
       <EventBottomBar
-        activeTagId={activeTagId}
+        activeTagId={displayedTagId}
         tags={tags}
-        onSelectTag={selectTag}
+        onSelectTag={handleSelectTag}
       />
     </div>
   )
