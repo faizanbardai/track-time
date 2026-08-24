@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { PATHS } from '@/constants/paths'
 import { cn } from '@/lib/utils'
+import Container from '@/ui/Container/Container'
 
 const navigation = [
   {
@@ -99,7 +100,7 @@ export const AppHeader = () => {
   return (
     <>
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center gap-3 px-2">
+        <Container className="flex h-14 items-center gap-3">
           <Button
             ref={triggerRef}
             type="button"
@@ -116,7 +117,7 @@ export const AppHeader = () => {
           <Link href={PATHS.HOME} className="font-semibold tracking-tight">
             {pageTitle}
           </Link>
-        </div>
+        </Container>
       </header>
 
       <div

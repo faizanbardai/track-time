@@ -3,8 +3,16 @@ import { Event } from '@/types/event'
 import { Dayjs } from 'dayjs'
 import { useEventListClock } from '@/components/Event/EventListClock'
 
-export const Counter = ({ event, now }: { event: Event; now: Dayjs }) => {
-  const timeDiff = calculateTimeDiff(event, event.datetime, now)
+export const Counter = ({
+  event,
+  now,
+  from = event.endDate ?? event.datetime,
+}: {
+  event: Event
+  now: Dayjs
+  from?: string
+}) => {
+  const timeDiff = calculateTimeDiff(event, from, now)
 
   const years = event.years ? <span>{timeDiff.years}Y </span> : null
   const months = event.months ? <span>{timeDiff.months}M </span> : null

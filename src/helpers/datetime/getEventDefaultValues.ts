@@ -5,6 +5,8 @@ export const getEventDefaultValues = (): EventFormData => ({
   title: '',
   date: dayjs().format('YYYY-MM-DD'),
   time: dayjs().format('HH:mm'),
+  endDate: '',
+  endTime: '',
   tags: '',
   seconds: true,
   minutes: true,

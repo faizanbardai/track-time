@@ -2,6 +2,7 @@ export interface Event {
   id: string
   title: string
   datetime: string
+  endDate?: string
   seconds: boolean
   minutes: boolean
   hours: boolean
@@ -47,6 +48,8 @@ export type EventFormData = {
   title: string
   date: string
   time: string
+  endDate: string
+  endTime: string
   tags: string
   seconds: boolean
   minutes: boolean

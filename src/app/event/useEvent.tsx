@@ -14,6 +14,8 @@ export const useEvent = () => {
       id,
       date,
       time,
+      endDate,
+      endTime,
       title,
       tags,
       seconds,
@@ -28,6 +30,9 @@ export const useEvent = () => {
       id: id || uuid(),
       title,
       datetime,
+      ...(endDate
+        ? { endDate: dayjs(`${endDate}T${endTime || '00:00'}`).toISOString() }
+        : {}),
       seconds,
       minutes,
       hours,
