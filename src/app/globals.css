@@ -136,7 +136,7 @@
   }
 }
 
-@keyframes event-list-progress {
+@keyframes loader-indeterminate {
   from {
     transform: translateX(-100%);
   }
@@ -145,12 +145,12 @@
   }
 }
 
-.event-list-progress {
-  animation: event-list-progress 1s ease-in-out infinite;
+.loader-indeterminate {
+  animation: loader-indeterminate 1s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .event-list-progress {
+  .loader-indeterminate {
     width: 100%;
     animation: none;
     opacity: 0.65;

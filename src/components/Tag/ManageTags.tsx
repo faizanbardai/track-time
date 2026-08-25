@@ -31,6 +31,9 @@ import {
   reorderTags,
 } from '@/helpers/indexedDB'
 import { TagWithUsage } from '@/types/event'
+import { AlertDialog } from '@/components/ui/alert-dialog'
+import { useToast } from '@/components/providers/toast'
+import { useLoadingActions } from '@/components/providers/loading'
 
 interface SortableTagProps {
   tag: TagWithUsage
@@ -129,6 +132,8 @@ const SortableTag = ({
 
 export const ManageTags = () => {
   const { dbReady } = useIndexedDB()
+  const { showToast } = useToast()
+  const { startLoading, stopLoading } = useLoadingActions()
   const [tags, setTags] = useState<TagWithUsage[]>([])
   const [names, setNames] = useState<Record<string, string>>({})
   const [newName, setNewName] = useState('')
@@ -136,6 +141,7 @@ export const ManageTags = () => {
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [tagToDelete, setTagToDelete] = useState<TagWithUsage | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
@@ -162,8 +168,10 @@ export const ManageTags = () => {
   }, [])
 
   useEffect(() => {
-    if (dbReady) void loadTags()
-  }, [dbReady, loadTags])
+    if (!dbReady) return
+    startLoading()
+    void loadTags().finally(stopLoading)
+  }, [dbReady, loadTags, startLoading, stopLoading])
 
   useEffect(() => {
     if (!editingId) return
@@ -178,6 +186,7 @@ export const ManageTags = () => {
     event.preventDefault()
     if (!newName.trim()) return
     setSavingId('new')
+    startLoading()
     try {
       await createTag(newName)
       setNewName('')
@@ -186,6 +195,7 @@ export const ManageTags = () => {
       setError(err instanceof Error ? err.message : 'Failed to create tag')
     } finally {
       setSavingId(null)
+      stopLoading()
     }
   }
 
@@ -196,6 +206,7 @@ export const ManageTags = () => {
       return
     }
     setSavingId(tag.id)
+    startLoading()
     try {
       await renameTag(tag.id, name)
       setEditingId(null)
@@ -204,23 +215,23 @@ export const ManageTags = () => {
       setError(err instanceof Error ? err.message : 'Failed to rename tag')
     } finally {
       setSavingId(null)
+      stopLoading()
     }
   }
 
   const handleDelete = async (tag: TagWithUsage) => {
-    const eventLabel = `${tag.eventCount} ${tag.eventCount === 1 ? 'event' : 'events'}`
-    const confirmed = window.confirm(
-      `Delete “${tag.name}”? It will be removed from ${eventLabel}. The events themselves will not be deleted.`,
-    )
-    if (!confirmed) return
     setSavingId(tag.id)
+    startLoading()
     try {
       await deleteTag(tag.id)
       await loadTags()
+      showToast(`Tag “${tag.name}” deleted`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to delete tag')
     } finally {
       setSavingId(null)
+      stopLoading()
+      setTagToDelete(null)
     }
   }
 
@@ -231,11 +242,14 @@ export const ManageTags = () => {
     if (oldIndex < 0 || newIndex < 0) return
     const ordered = arrayMove(tags, oldIndex, newIndex)
     setTags(ordered)
+    startLoading()
     try {
       await reorderTags(ordered.map((tag) => tag.id))
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to reorder tags')
       await loadTags()
+    } finally {
+      stopLoading()
     }
   }
 
@@ -287,12 +301,25 @@ export const ManageTags = () => {
                     }))
                     setEditingId(null)
                   }}
-                  onDelete={() => void handleDelete(tag)}
+                  onDelete={() => setTagToDelete(tag)}
                 />
               ))}
             </div>
           </SortableContext>
         </DndContext>
+      )}
+      {tagToDelete && (
+        <AlertDialog
+          open={Boolean(tagToDelete)}
+          title={`Delete “${tagToDelete.name}”?`}
+          description={`It will be removed from ${tagToDelete.eventCount} ${tagToDelete.eventCount === 1 ? 'event' : 'events'}. The events themselves will not be deleted.`}
+          confirmLabel={
+            savingId === tagToDelete.id ? 'Deleting...' : 'Delete tag'
+          }
+          onConfirm={() => handleDelete(tagToDelete)}
+          onCancel={() => savingId !== tagToDelete.id && setTagToDelete(null)}
+          destructive
+        />
       )}
     </div>
   )

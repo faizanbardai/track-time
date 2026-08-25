@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { listTags, normalizeTagKey, parseTagNames } from '@/helpers/indexedDB'
 import { Tag } from '@/types/event'
+import { useLoadingActions } from '@/components/providers/loading'
 
 interface TagPickerProps {
   value: string
@@ -18,6 +19,7 @@ const serialize = (names: string[]) => names.join(', ')
 
 export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
   const { dbReady } = useIndexedDB()
+  const { startLoading, stopLoading } = useLoadingActions()
   const [tags, setTags] = useState<Tag[]>([])
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -33,13 +35,15 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
   useEffect(() => {
     if (!dbReady) return
     setLoading(true)
+    startLoading()
     listTags()
       .then((loaded) => setTags(loaded.filter((tag) => !tag.system)))
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : 'Failed to load tags'),
       )
       .finally(() => setLoading(false))
-  }, [dbReady])
+      .finally(stopLoading)
+  }, [dbReady, startLoading, stopLoading])
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {

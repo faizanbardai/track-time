@@ -2,6 +2,7 @@
 
 import { db } from '@/helpers/indexedDB'
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { useLoadingActions } from '@/components/providers/loading'
 
 export type IndexedDBContextType = {
   dbReady: boolean
@@ -15,12 +16,14 @@ const IndexedDBContext = createContext<IndexedDBContextType | undefined>(
 export const IndexedDBProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const { startLoading, stopLoading } = useLoadingActions()
   const [dbReady, setDbReady] = useState(false)
   const [dbError, setDbError] = useState<string | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    startLoading()
     db.open()
       .then(() => setDbReady(true))
       .catch((err: unknown) => {
@@ -30,7 +33,8 @@ export const IndexedDBProvider: React.FC<{ children: React.ReactNode }> = ({
           setDbError('IndexedDB error')
         }
       })
-  }, [])
+      .finally(stopLoading)
+  }, [startLoading, stopLoading])
 
   return (
     <IndexedDBContext.Provider value={{ dbReady, dbError }}>

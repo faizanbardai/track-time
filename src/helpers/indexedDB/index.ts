@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import { v4 as uuid } from 'uuid'
-import {
+import type {
   Event,
   EventWithTags,
   Tag,
@@ -14,6 +14,7 @@ export type EventDraft = Omit<Event, 'createdAt' | 'updatedAt'> &
 
 export const ALL_TAG_ID = 'all'
 export const UPCOMING_TAG_ID = 'upcoming'
+export const DATA_CHANGED_EVENT = 'track-time:data-changed'
 
 const ALL_TAG_NAME = 'All'
 
@@ -435,15 +436,35 @@ export const saveEvent = async (
   )
 }
 
-export const deleteEvent = async (eventId: string): Promise<void> => {
-  await db.transaction('rw', db.events, db.tagEventOrder, async () => {
+export interface DeletedEventSnapshot {
+  event: Event
+  orders: TagEventOrder[]
+}
+
+export const deleteEvent = async (
+  eventId: string,
+): Promise<DeletedEventSnapshot | null> => {
+  return db.transaction('rw', db.events, db.tagEventOrder, async () => {
+    const event = await db.events.get(eventId)
+    if (!event) return null
     const orders = await db.tagEventOrder
       .where('eventId')
       .equals(eventId)
       .toArray()
     await db.tagEventOrder.bulkDelete(orders.map((order) => order.id))
     await db.events.delete(eventId)
+    return { event, orders }
   })
+}
+
+export const restoreDeletedEvent = async (
+  snapshot: DeletedEventSnapshot,
+): Promise<void> => {
+  await db.transaction('rw', db.events, db.tagEventOrder, async () => {
+    await db.events.put(snapshot.event)
+    await db.tagEventOrder.bulkPut(snapshot.orders)
+  })
+  window.dispatchEvent(new Event(DATA_CHANGED_EVENT))
 }
 
 export const reorderEventsInTag = async (
