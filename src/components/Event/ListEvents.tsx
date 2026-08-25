@@ -112,8 +112,9 @@ const ListEventsContent = () => {
         {tagLoading ? 'Loading events...' : ''}
       </span>
       <div
+        data-testid="tag-swipe-surface"
         className={cn(
-          'h-full touch-pan-y overflow-x-clip',
+          'h-full min-h-[calc(100dvh-4.5rem)] touch-pan-y overflow-x-clip',
           isSettling && 'pointer-events-none',
         )}
         {...swipeNavigation}
