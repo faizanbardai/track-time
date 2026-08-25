@@ -13,6 +13,7 @@ export type EventDraft = Omit<Event, 'createdAt' | 'updatedAt'> &
   Partial<Pick<Event, 'createdAt' | 'updatedAt'>>
 
 export const ALL_TAG_ID = 'all'
+export const UPCOMING_TAG_ID = 'upcoming'
 
 const ALL_TAG_NAME = 'All'
 
@@ -376,6 +377,17 @@ export const listEventsByTag = async (
     .filter((event): event is Event => Boolean(event))
 
   return attachTagsToEvents(sortedEvents)
+}
+
+export const listUpcomingEvents = async (
+  now = new Date(),
+): Promise<EventWithTags[]> => {
+  const events = await db.events
+    .where('datetime')
+    .above(now.toISOString())
+    .sortBy('datetime')
+
+  return attachTagsToEvents(events)
 }
 
 export const listEvents = async (): Promise<EventWithTags[]> => {

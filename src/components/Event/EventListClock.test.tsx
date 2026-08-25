@@ -123,7 +123,11 @@ describe('EventListClock', () => {
 
   it('renders preview counters without live subscriptions', () => {
     const events = [createEventWithTags('preview')]
-    const { rerender } = render(<PreviewPanel events={events} />)
+    const { rerender } = render(
+      <EventListClock>
+        <PreviewPanel events={events} />
+      </EventListClock>,
+    )
 
     expect(screen.getByText('Event preview')).toBeTruthy()
     expect(screen.getByText('0s')).toBeTruthy()
@@ -133,9 +137,13 @@ describe('EventListClock', () => {
     })
 
     expect(screen.getByText('0s')).toBeTruthy()
-    expect(vi.getTimerCount()).toBe(0)
+    expect(vi.getTimerCount()).toBe(1)
 
-    rerender(<PreviewPanel events={[createEventWithTags('preview')]} />)
+    rerender(
+      <EventListClock>
+        <PreviewPanel events={[createEventWithTags('preview')]} />
+      </EventListClock>,
+    )
     expect(screen.getByText('3s')).toBeTruthy()
   })
 })

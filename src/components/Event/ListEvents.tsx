@@ -5,13 +5,17 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import dayjs from 'dayjs'
 import { SortableEventItem } from './SortableEventItem'
 import { MemoizedListEvent } from '@/components/Event/ListEvent'
-import { EventListClock } from '@/components/Event/EventListClock'
+import {
+  EventListClock,
+  useEventListClock,
+} from '@/components/Event/EventListClock'
 import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
 import { useTagSwipeNavigation } from '@/components/Event/useTagSwipeNavigation'
-import { ALL_TAG_ID } from '@/helpers/indexedDB'
+import { ALL_TAG_ID, UPCOMING_TAG_ID } from '@/helpers/indexedDB'
 import type { EventWithTags } from '@/types/event'
 import { cn } from '@/lib/utils'
+import { filterUpcomingEvents } from '@/helpers/eventViews'
 import { useCallback, useEffect, useState } from 'react'
 
 export const PreviewPanel = ({
@@ -21,19 +25,25 @@ export const PreviewPanel = ({
   events: EventWithTags[]
   activeTagId?: string
 }) => {
-  const [now, setNow] = useState(() => dayjs())
+  const clockNow = useEventListClock()
+  const [previewNow, setPreviewNow] = useState(() => dayjs())
 
   useEffect(() => {
-    setNow(dayjs())
+    setPreviewNow(dayjs())
   }, [events])
+
+  const visibleEvents =
+    activeTagId === UPCOMING_TAG_ID
+      ? filterUpcomingEvents(events, clockNow)
+      : events
 
   return (
     <div className="grid min-h-full content-start gap-2">
-      {events.map((event) => (
+      {visibleEvents.map((event) => (
         <MemoizedListEvent
           key={event.id}
           event={event}
-          now={now}
+          now={previewNow}
           activeTagId={activeTagId}
         />
       ))}
@@ -62,6 +72,7 @@ const ListEventsContent = () => {
     tags,
     selectTag,
     handleDragEnd,
+    canReorder,
   } = useListEvents()
   const handleSelectTag = useCallback(
     (tagId: string) => {
@@ -138,18 +149,22 @@ const ListEventsContent = () => {
             </div>
           )}
 
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={() => setIsSorting(true)}
-            onDragCancel={() => setIsSorting(false)}
-            onDragEnd={(event) => {
-              setIsSorting(false)
-              void handleDragEnd(event)
-            }}
-          >
-            <ActiveEventList events={events} activeTagId={activeTagId} />
-          </DndContext>
+          {canReorder ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={() => setIsSorting(true)}
+              onDragCancel={() => setIsSorting(false)}
+              onDragEnd={(event) => {
+                setIsSorting(false)
+                void handleDragEnd(event)
+              }}
+            >
+              <ActiveEventList events={events} activeTagId={activeTagId} />
+            </DndContext>
+          ) : (
+            <StaticEventList events={events} activeTagId={activeTagId} />
+          )}
 
           {nextTagId && (
             <div
@@ -171,6 +186,27 @@ const ListEventsContent = () => {
         tags={tags}
         onSelectTag={handleSelectTag}
       />
+    </div>
+  )
+}
+
+const StaticEventList = ({
+  events,
+  activeTagId,
+}: {
+  events: EventWithTags[]
+  activeTagId: string
+}) => {
+  return (
+    <div className="grid min-h-full grid-cols-1 content-start gap-2">
+      {events.map((event) => (
+        <MemoizedListEvent
+          key={event.id}
+          event={event}
+          liveCounter
+          activeTagId={activeTagId}
+        />
+      ))}
     </div>
   )
 }
