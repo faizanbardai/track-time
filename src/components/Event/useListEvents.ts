@@ -10,8 +10,10 @@ import {
 import {
   ALL_TAG_ID,
   listEventsByTag,
+  listUpcomingEvents,
   listTags,
   reorderEventsInTag,
+  UPCOMING_TAG_ID,
 } from '../../helpers/indexedDB'
 import { EventWithTags, Tag } from '../../types/event'
 import { useIndexedDB } from '@/components/providers/indexedDB'
@@ -19,10 +21,27 @@ import { useRouter } from 'next/navigation'
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { PATHS } from '@/constants/paths'
 import { useActiveTag } from '@/components/Event/useActiveTag'
+import { useEventListClock } from '@/components/Event/EventListClock'
+import { filterUpcomingEvents } from '@/helpers/eventViews'
+
+const UPCOMING_TAG: Tag = {
+  id: UPCOMING_TAG_ID,
+  name: 'Upcoming',
+  system: true,
+  createdAt: '',
+  updatedAt: '',
+}
+
+const listEventsForTag = (tagId: string) => {
+  return tagId === UPCOMING_TAG_ID
+    ? listUpcomingEvents()
+    : listEventsByTag(tagId)
+}
 
 export const useListEvents = () => {
   const router = useRouter()
   const { dbReady } = useIndexedDB()
+  const now = useEventListClock()
 
   const [eventsByTag, setEventsByTag] = useState<
     Record<string, EventWithTags[]>
@@ -37,13 +56,23 @@ export const useListEvents = () => {
     selectionReady,
     selectTag: persistActiveTag,
   } = useActiveTag(tags)
-  const events = eventsByTag[activeTagId] ?? []
+  const loadedEvents = eventsByTag[activeTagId] ?? []
+  const events =
+    activeTagId === UPCOMING_TAG_ID
+      ? filterUpcomingEvents(loadedEvents, now)
+      : loadedEvents
 
   useEffect(() => {
     if (!dbReady) return
 
     listTags()
-      .then(setTags)
+      .then((loadedTags) =>
+        setTags([
+          ...loadedTags.slice(0, 1),
+          UPCOMING_TAG,
+          ...loadedTags.slice(1),
+        ]),
+      )
       .catch((err) => {
         setError(err.message)
         setLoading(false)
@@ -76,7 +105,7 @@ export const useListEvents = () => {
       setLoading(false)
     } else {
       setLoading(true)
-      listEventsByTag(activeTagId)
+      listEventsForTag(activeTagId)
         .then((loadedEvents) => {
           if (cancelled) return
           cacheEvents(activeTagId, loadedEvents)
@@ -91,7 +120,7 @@ export const useListEvents = () => {
     }
 
     adjacentTagIds.forEach((tagId) => {
-      listEventsByTag(tagId)
+      listEventsForTag(tagId)
         .then((loadedEvents) => {
           if (!cancelled) cacheEvents(tagId, loadedEvents)
         })
@@ -172,6 +201,7 @@ export const useListEvents = () => {
     sensors,
     tags,
     selectTag,
+    canReorder: activeTagId !== UPCOMING_TAG_ID,
     handleDragEnd,
   }
 }
