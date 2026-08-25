@@ -21,6 +21,9 @@ import {
   summarizeBackup,
 } from '@/helpers/indexedDB/backup'
 import type { BackupSummary, BackupV1 } from '@/types/backup'
+import { AlertDialog } from '@/components/ui/alert-dialog'
+import { useToast } from '@/components/providers/toast'
+import { useLoadingActions } from '@/components/providers/loading'
 
 const MAX_BACKUP_FILE_BYTES = 50 * 1024 * 1024
 
@@ -43,6 +46,8 @@ const downloadJson = (contents: unknown, fileName: string) => {
 
 export const BackupAndRestore = () => {
   const { dbReady, dbError } = useIndexedDB()
+  const { showToast } = useToast()
+  const { startLoading, stopLoading } = useLoadingActions()
   const [exportPassword, setExportPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [exporting, setExporting] = useState(false)
@@ -55,6 +60,7 @@ export const BackupAndRestore = () => {
   const [backup, setBackup] = useState<BackupV1 | null>(null)
   const [summary, setSummary] = useState<BackupSummary | null>(null)
   const [importing, setImporting] = useState(false)
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false)
   const [importMessage, setImportMessage] = useState<string | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -75,6 +81,7 @@ export const BackupAndRestore = () => {
     }
 
     setExporting(true)
+    startLoading()
     try {
       const currentBackup = await createBackup()
       const encrypted = await encryptBackup(currentBackup, exportPassword)
@@ -88,6 +95,7 @@ export const BackupAndRestore = () => {
       setExportError(getMessage(error, 'Unable to create the backup.'))
     } finally {
       setExporting(false)
+      stopLoading()
     }
   }
 
@@ -112,12 +120,15 @@ export const BackupAndRestore = () => {
     }
 
     try {
+      startLoading()
       const contents = await file.text()
       if (readId !== fileReadId.current) return
       setFileContents(contents)
     } catch (error) {
       if (readId !== fileReadId.current) return
       setImportError(getMessage(error, 'Unable to read the selected file.'))
+    } finally {
+      stopLoading()
     }
   }
 
@@ -125,6 +136,7 @@ export const BackupAndRestore = () => {
     event.preventDefault()
     if (!fileContents) return
     setImporting(true)
+    startLoading()
     setImportError(null)
     setImportMessage(null)
     setBackup(null)
@@ -138,17 +150,15 @@ export const BackupAndRestore = () => {
       setImportError(getMessage(error, 'Unable to unlock the backup.'))
     } finally {
       setImporting(false)
+      stopLoading()
     }
   }
 
   const handleRestore = async () => {
     if (!backup || !summary) return
-    const confirmed = window.confirm(
-      `Restore ${summary.eventCount} events and replace all current local data? This cannot be undone.`,
-    )
-    if (!confirmed) return
 
     setImporting(true)
+    startLoading()
     setImportError(null)
     setImportMessage(null)
     try {
@@ -160,6 +170,7 @@ export const BackupAndRestore = () => {
       setSummary(null)
       setSelectedFile(null)
       setFileContents(null)
+      showToast('Backup restored successfully')
       fileReadId.current += 1
       if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (error) {
@@ -168,6 +179,8 @@ export const BackupAndRestore = () => {
       )
     } finally {
       setImporting(false)
+      setRestoreDialogOpen(false)
+      stopLoading()
     }
   }
 
@@ -304,7 +317,7 @@ export const BackupAndRestore = () => {
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => void handleRestore()}
+                onClick={() => setRestoreDialogOpen(true)}
                 disabled={importing}
               >
                 {importing ? 'Restoring…' : 'Replace data and restore'}
@@ -327,6 +340,17 @@ export const BackupAndRestore = () => {
           )}
         </CardContent>
       </Card>
+      {summary && (
+        <AlertDialog
+          open={restoreDialogOpen}
+          title="Replace local data?"
+          description={`Restore ${summary.eventCount} events and replace all current local data? This cannot be undone.`}
+          confirmLabel={importing ? 'Restoring…' : 'Replace and restore'}
+          onConfirm={handleRestore}
+          onCancel={() => !importing && setRestoreDialogOpen(false)}
+          destructive
+        />
+      )}
     </div>
   )
 }

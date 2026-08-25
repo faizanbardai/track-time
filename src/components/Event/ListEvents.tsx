@@ -100,11 +100,7 @@ const ListEventsContent = () => {
   })
 
   if (initialLoading) {
-    return (
-      <div className="col-span-full text-center text-muted-foreground py-12">
-        Loading events...
-      </div>
-    )
+    return <div aria-busy="true" />
   }
 
   return (
@@ -112,14 +108,6 @@ const ListEventsContent = () => {
       className="grid h-full grid-rows-[auto_1fr] gap-2"
       aria-busy={tagLoading}
     >
-      <div className="relative h-0.5 overflow-hidden rounded-full">
-        {tagLoading && (
-          <div
-            className="event-list-progress absolute inset-y-0 left-0 w-1/3 rounded-full bg-primary"
-            aria-hidden="true"
-          />
-        )}
-      </div>
       <span className="sr-only" role="status" aria-live="polite">
         {tagLoading ? 'Loading events...' : ''}
       </span>

@@ -4,9 +4,11 @@ import { EventFormData } from '@/types/event'
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import { EventDraft, parseTagNames, saveEvent } from '@/helpers/indexedDB'
+import { useLoadingActions } from '@/components/providers/loading'
 
 export const useEvent = () => {
   const router = useRouter()
+  const { startLoading, stopLoading } = useLoadingActions()
   const onSubmit: SubmitHandler<EventFormData> = async (
     eventFormData: EventFormData,
   ) => {
@@ -41,10 +43,13 @@ export const useEvent = () => {
       years,
     }
     try {
+      startLoading()
       await saveEvent(newEventData, parseTagNames(tags))
       router.push('/')
     } catch (err) {
       console.error('Failed to create new event:', err)
+    } finally {
+      stopLoading()
     }
   }
 

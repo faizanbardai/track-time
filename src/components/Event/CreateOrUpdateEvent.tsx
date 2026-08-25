@@ -47,12 +47,17 @@ const CreateOrUpdateEvent = ({ event }: EventPageProps) => {
 
   return (
     <div className="grid gap-4 pb-20">
-      <Button asChild variant="outline" className="justify-self-start">
-        <Link href={PATHS.HOME}>
-          <ArrowLeft aria-hidden="true" />
-          Back to events
-        </Link>
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button asChild variant="outline">
+          <Link href={PATHS.HOME}>
+            <ArrowLeft aria-hidden="true" />
+            Back to events
+          </Link>
+        </Button>
+        {event?.id && (
+          <DeleteEvent eventId={event.id} eventTitle={event.title} />
+        )}
+      </div>
       <Card className="gap-4 py-4">
         <form id="event-form" onSubmit={handleSubmit(onSubmit)}>
           <CardContent>
@@ -179,7 +184,6 @@ const CreateOrUpdateEvent = ({ event }: EventPageProps) => {
           <Button type="submit" form="event-form">
             {event?.id ? 'Update Event' : 'Create Event'}
           </Button>
-          {event?.id && <DeleteEvent eventId={event.id} />}
         </div>
       </div>
     </div>

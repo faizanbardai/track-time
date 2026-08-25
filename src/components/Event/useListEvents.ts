@@ -9,6 +9,7 @@ import {
 } from '@dnd-kit/core'
 import {
   ALL_TAG_ID,
+  DATA_CHANGED_EVENT,
   listEventsByTag,
   listUpcomingEvents,
   listTags,
@@ -23,6 +24,7 @@ import { PATHS } from '@/constants/paths'
 import { useActiveTag } from '@/components/Event/useActiveTag'
 import { useEventListClock } from '@/components/Event/EventListClock'
 import { filterUpcomingEvents } from '@/helpers/eventViews'
+import { useLoadingActions } from '@/components/providers/loading'
 
 const UPCOMING_TAG: Tag = {
   id: UPCOMING_TAG_ID,
@@ -41,6 +43,7 @@ const listEventsForTag = (tagId: string) => {
 export const useListEvents = () => {
   const router = useRouter()
   const { dbReady } = useIndexedDB()
+  const { startLoading, stopLoading } = useLoadingActions()
   const now = useEventListClock()
 
   const [eventsByTag, setEventsByTag] = useState<
@@ -49,6 +52,7 @@ export const useListEvents = () => {
   const eventsByTagRef = useRef<Record<string, EventWithTags[]>>({})
   const [tags, setTags] = useState<Tag[]>([])
   const [loadedTagId, setLoadedTagId] = useState<string | null>(null)
+  const [refreshVersion, setRefreshVersion] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const {
@@ -65,6 +69,7 @@ export const useListEvents = () => {
   useEffect(() => {
     if (!dbReady) return
 
+    startLoading()
     listTags()
       .then((loadedTags) =>
         setTags([
@@ -77,7 +82,21 @@ export const useListEvents = () => {
         setError(err.message)
         setLoading(false)
       })
-  }, [dbReady])
+      .finally(stopLoading)
+  }, [dbReady, startLoading, stopLoading])
+
+  useEffect(() => {
+    const refreshEvents = () => {
+      eventsByTagRef.current = {}
+      setEventsByTag({})
+      setLoadedTagId(null)
+      setLoading(true)
+      setRefreshVersion((version) => version + 1)
+    }
+
+    window.addEventListener(DATA_CHANGED_EVENT, refreshEvents)
+    return () => window.removeEventListener(DATA_CHANGED_EVENT, refreshEvents)
+  }, [])
 
   useEffect(() => {
     if (!dbReady || !selectionReady) return
@@ -105,6 +124,7 @@ export const useListEvents = () => {
       setLoading(false)
     } else {
       setLoading(true)
+      startLoading()
       listEventsForTag(activeTagId)
         .then((loadedEvents) => {
           if (cancelled) return
@@ -115,6 +135,7 @@ export const useListEvents = () => {
           if (!cancelled) setError(err.message)
         })
         .finally(() => {
+          stopLoading()
           if (!cancelled) setLoading(false)
         })
     }
@@ -132,7 +153,15 @@ export const useListEvents = () => {
     return () => {
       cancelled = true
     }
-  }, [activeTagId, dbReady, selectionReady, tags])
+  }, [
+    activeTagId,
+    dbReady,
+    refreshVersion,
+    selectionReady,
+    startLoading,
+    stopLoading,
+    tags,
+  ])
 
   useEffect(() => {
     if (
