@@ -7,6 +7,7 @@ import dayjs, { Dayjs } from 'dayjs'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { memo } from 'react'
+import { cacheEvent } from '@/helpers/indexedDB'
 
 interface ListEventProps {
   event: EventWithTags
@@ -51,9 +52,15 @@ export const ListEvent = ({
     (tag) => !tag.system && tag.id !== activeTagId,
   )
   const progressDetails = calculateEventProgressDetails(event, now ?? dayjs())
+  const eventPath = `/event/${event.id}`
 
   const handleClick = () => {
-    router.push(`/event/${event.id}`)
+    cacheEvent(event)
+    router.push(eventPath)
+  }
+
+  const prefetchEvent = () => {
+    void router.prefetch(eventPath)
   }
 
   return (
@@ -65,6 +72,8 @@ export const ListEvent = ({
           : 'cursor-pointer',
       )}
       onClick={handleClick}
+      onMouseEnter={prefetchEvent}
+      onFocus={prefetchEvent}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0 px-4 py-4">
         <div className="min-w-0 flex-1">
