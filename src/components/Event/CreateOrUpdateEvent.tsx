@@ -26,6 +26,7 @@ const getFormDefaultValues = (event: EventWithTags | null): EventFormData => {
   const { createdAt, updatedAt, datetime, endDate, tags, ...rest } = event
   return {
     ...rest,
+    progressEnabled: event.progressEnabled ?? false,
     date: dayjs(datetime).format('YYYY-MM-DD'),
     time: dayjs(datetime).format('HH:mm'),
     endDate: endDate ? dayjs(endDate).format('YYYY-MM-DD') : '',
@@ -173,6 +174,25 @@ const CreateOrUpdateEvent = ({ event }: EventPageProps) => {
                       </label>
                     ))}
                   </div>
+                  <label
+                    htmlFor="progressEnabled"
+                    className="mt-2 flex items-center gap-2"
+                  >
+                    <Controller
+                      name="progressEnabled"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="progressEnabled"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      )}
+                    />
+                    Show progress
+                  </label>
                 </div>
               </div>
             </div>

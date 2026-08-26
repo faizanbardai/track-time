@@ -8,6 +8,7 @@ export const getEventDefaultValues = (): EventFormData => ({
   endDate: '',
   endTime: '',
   tags: '',
+  progressEnabled: false,
   seconds: true,
   minutes: true,
   hours: true,

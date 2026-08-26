@@ -26,6 +26,7 @@ export const useEvent = () => {
       days,
       months,
       years,
+      progressEnabled,
     } = eventFormData
     const datetime = dayjs(`${date}T${time}`).toISOString()
     const newEventData: EventDraft = {
@@ -41,6 +42,7 @@ export const useEvent = () => {
       days,
       months,
       years,
+      progressEnabled,
     }
     try {
       startLoading()

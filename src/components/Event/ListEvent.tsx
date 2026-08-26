@@ -1,5 +1,6 @@
 import { Counter, LiveCounter } from '@/components/Counter'
 import { calculateDuration } from '@/helpers/datetime/calculateTimeDiff'
+import { calculateEventProgressDetails } from '@/helpers/datetime/calculateEventProgress'
 import { Card, CardTitle } from '@/components/ui/card'
 import { EventWithTags } from '@/types/event'
 import dayjs, { Dayjs } from 'dayjs'
@@ -49,6 +50,7 @@ export const ListEvent = ({
   const displayTags = event.tags.filter(
     (tag) => !tag.system && tag.id !== activeTagId,
   )
+  const progressDetails = calculateEventProgressDetails(event, now ?? dayjs())
 
   const handleClick = () => {
     router.push(`/event/${event.id}`)
@@ -57,7 +59,7 @@ export const ListEvent = ({
   return (
     <Card
       className={cn(
-        'gap-0 py-0 transition-colors hover:border-primary/30 hover:bg-accent',
+        'relative gap-0 overflow-hidden py-0 transition-colors hover:border-primary/30 hover:bg-accent',
         draggable
           ? 'cursor-grab select-none active:cursor-grabbing'
           : 'cursor-pointer',
@@ -102,6 +104,19 @@ export const ListEvent = ({
           </div>
         )}
       </div>
+      {progressDetails && (
+        <div
+          aria-label={progressDetails.description}
+          className="h-1 w-full bg-muted"
+          role="img"
+        >
+          <div
+            aria-hidden="true"
+            className="h-full bg-primary transition-[width] duration-500"
+            style={{ width: `${progressDetails.progress * 100}%` }}
+          />
+        </div>
+      )}
     </Card>
   )
 }

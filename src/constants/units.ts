@@ -1,8 +1,17 @@
+export const timeUnits = [
+  'seconds',
+  'minutes',
+  'hours',
+  'days',
+  'months',
+  'years',
+] as const
+
+export type TimeUnit = (typeof timeUnits)[number]
+
 export const units = [
-  { name: 'seconds', label: 'Seconds' },
-  { name: 'minutes', label: 'Minutes' },
-  { name: 'hours', label: 'Hours' },
-  { name: 'days', label: 'Days' },
-  { name: 'months', label: 'Months' },
-  { name: 'years', label: 'Years' },
+  ...timeUnits.map((name) => ({
+    name,
+    label: name[0].toUpperCase() + name.slice(1),
+  })),
 ]

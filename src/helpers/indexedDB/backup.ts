@@ -64,12 +64,17 @@ const parseEvent = (value: unknown, index: number): Event => {
     item.endDate === undefined
       ? undefined
       : requireIsoDate(item.endDate, `${prefix} endDate`)
+  const progressEnabled =
+    item.progressEnabled === undefined
+      ? undefined
+      : requireBoolean(item.progressEnabled, `${prefix} progressEnabled`)
 
   return {
     id: requireString(item.id, `${prefix} id`),
     title: requireString(item.title, `${prefix} title`),
     datetime: requireIsoDate(item.datetime, `${prefix} datetime`),
     ...(endDate ? { endDate } : {}),
+    ...(progressEnabled === undefined ? {} : { progressEnabled }),
     seconds: requireBoolean(item.seconds, `${prefix} seconds`),
     minutes: requireBoolean(item.minutes, `${prefix} minutes`),
     hours: requireBoolean(item.hours, `${prefix} hours`),

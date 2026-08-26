@@ -3,6 +3,7 @@ export interface Event {
   title: string
   datetime: string
   endDate?: string
+  progressEnabled?: boolean
   seconds: boolean
   minutes: boolean
   hours: boolean
@@ -57,4 +58,5 @@ export type EventFormData = {
   days: boolean
   months: boolean
   years: boolean
+  progressEnabled: boolean
 }
