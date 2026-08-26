@@ -16,6 +16,25 @@ export const ALL_TAG_ID = 'all'
 export const UPCOMING_TAG_ID = 'upcoming'
 export const DATA_CHANGED_EVENT = 'track-time:data-changed'
 
+const eventCache = new Map<string, EventWithTags>()
+const MAX_CACHED_EVENTS = 50
+
+export const cacheEvent = (event: EventWithTags): void => {
+  if (eventCache.size >= MAX_CACHED_EVENTS && !eventCache.has(event.id)) {
+    const oldestEventId = eventCache.keys().next().value
+    if (oldestEventId) eventCache.delete(oldestEventId)
+  }
+  eventCache.set(event.id, event)
+}
+
+export const getCachedEvent = (eventId: string): EventWithTags | null => {
+  return eventCache.get(eventId) ?? null
+}
+
+export const clearCachedEvent = (eventId: string): void => {
+  eventCache.delete(eventId)
+}
+
 const ALL_TAG_NAME = 'All'
 
 const getTagEventOrderId = (tagId: string, eventId: string) => {
@@ -402,6 +421,7 @@ export const getEvent = async (
   if (!event) return null
 
   const [eventWithTags] = await attachTagsToEvents([event])
+  cacheEvent(eventWithTags)
   return eventWithTags
 }
 
@@ -430,6 +450,7 @@ export const saveEvent = async (
         event.id,
         tags.map((tag) => tag.id),
       )
+      clearCachedEvent(event.id)
 
       return event.id
     },
@@ -453,6 +474,7 @@ export const deleteEvent = async (
       .toArray()
     await db.tagEventOrder.bulkDelete(orders.map((order) => order.id))
     await db.events.delete(eventId)
+    clearCachedEvent(eventId)
     return { event, orders }
   })
 }
@@ -464,6 +486,7 @@ export const restoreDeletedEvent = async (
     await db.events.put(snapshot.event)
     await db.tagEventOrder.bulkPut(snapshot.orders)
   })
+  clearCachedEvent(snapshot.event.id)
   window.dispatchEvent(new Event(DATA_CHANGED_EVENT))
 }
 

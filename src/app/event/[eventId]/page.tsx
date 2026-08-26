@@ -2,7 +2,7 @@
 import React from 'react'
 import { useEffect, useState } from 'react'
 import { EventWithTags } from '@/types/event'
-import { getEvent } from '@/helpers/indexedDB'
+import { getCachedEvent, getEvent } from '@/helpers/indexedDB'
 import CreateOrUpdateEvent from '@/components/Event/CreateOrUpdateEvent'
 import { useLoadingActions } from '@/components/providers/loading'
 
@@ -12,8 +12,10 @@ interface EventPageProps {
 
 const SingleEventPage = ({ params }: EventPageProps) => {
   const { eventId } = React.use(params)
-  const [event, setEvent] = useState<EventWithTags | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [event, setEvent] = useState<EventWithTags | null>(() =>
+    getCachedEvent(eventId),
+  )
+  const [loading, setLoading] = useState(() => !getCachedEvent(eventId))
   const [error, setError] = useState<string | null>(null)
   const { startLoading, stopLoading } = useLoadingActions()
 
@@ -31,7 +33,7 @@ const SingleEventPage = ({ params }: EventPageProps) => {
       .finally(stopLoading)
   }, [eventId, startLoading, stopLoading])
 
-  if (loading) return <div>Loading...</div>
+  if (loading) return <div aria-busy="true">Loading...</div>
   if (error) return <div className="text-red-500">{error}</div>
   if (!event) return <div>Event not found</div>
 
