@@ -17,6 +17,7 @@ import type { EventWithTags } from '@/types/event'
 import { cn } from '@/lib/utils'
 import { filterUpcomingEvents } from '@/helpers/eventViews'
 import { useCallback, useEffect, useState } from 'react'
+import { shouldRefreshSwipePreview } from './swipePreview'
 
 export const PreviewPanel = ({
   events,
@@ -98,6 +99,12 @@ const ListEventsContent = () => {
     onSwipeCommit: setDisplayedTagId,
     disabled: isSorting,
   })
+  const [previewEventsByTag, setPreviewEventsByTag] = useState(eventsByTag)
+  useEffect(() => {
+    if (shouldRefreshSwipePreview(isSettling)) {
+      setPreviewEventsByTag(eventsByTag)
+    }
+  }, [eventsByTag, isSettling])
 
   if (initialLoading) {
     return <div aria-busy="true" />
@@ -132,7 +139,7 @@ const ListEventsContent = () => {
               inert
             >
               <PreviewPanel
-                events={eventsByTag[previousTagId] ?? []}
+                events={previewEventsByTag[previousTagId] ?? []}
                 activeTagId={previousTagId}
               />
             </div>
@@ -163,7 +170,7 @@ const ListEventsContent = () => {
               inert
             >
               <PreviewPanel
-                events={eventsByTag[nextTagId] ?? []}
+                events={previewEventsByTag[nextTagId] ?? []}
                 activeTagId={nextTagId}
               />
             </div>
