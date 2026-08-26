@@ -133,6 +133,22 @@ describe('backup and restore', () => {
     })
   })
 
+  it('preserves progress visibility through backup and restore', async () => {
+    const source = importedBackup()
+    source.data.events[0].progressEnabled = true
+    await seed(source)
+
+    const backup = await createBackup()
+
+    expect(backup.data.events[0].progressEnabled).toBe(true)
+
+    await restoreBackup(backup)
+
+    await expect(db.events.get('event-1')).resolves.toMatchObject({
+      progressEnabled: true,
+    })
+  })
+
   it('encrypts a backup and only decrypts it with the correct password', async () => {
     const source = importedBackup()
     const encrypted = await encryptBackup(
