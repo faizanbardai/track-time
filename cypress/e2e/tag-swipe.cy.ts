@@ -131,7 +131,7 @@ const dispatchTouch = (
 
 describe('Tag swipe navigation', () => {
   it('changes tags when swiping in empty space below an event', () => {
-    cy.visit('http://localhost:3000')
+    cy.visit('/')
     cy.window().then(seedDatabase)
     cy.reload()
 
