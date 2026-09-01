@@ -142,7 +142,7 @@ const ListEventsContent = () => {
           {previousTagId && (
             <div
               key={previousTagId}
-              className="pointer-events-none absolute top-0 right-full h-full w-full"
+              className="pointer-events-none absolute top-0 right-[calc(100%+0.75rem)] h-full w-full"
               aria-hidden="true"
               inert
             >
@@ -173,7 +173,7 @@ const ListEventsContent = () => {
           {nextTagId && (
             <div
               key={nextTagId}
-              className="pointer-events-none absolute top-0 left-full h-full w-full"
+              className="pointer-events-none absolute top-0 left-[calc(100%+0.75rem)] h-full w-full"
               aria-hidden="true"
               inert
             >
