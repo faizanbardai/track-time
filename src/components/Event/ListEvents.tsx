@@ -174,7 +174,7 @@ const ListEventsContent = () => {
           {nextTagId && (
             <SwipeCard key={nextTagId} position="left" aria-hidden="true" inert>
               <PreviewPanel
-                events={previewEventsByTab[nextTagId] ?? []}
+                events={previewEventsByTag[nextTagId] ?? []}
                 activeTagId={nextTagId}
               />
             </SwipeCard>

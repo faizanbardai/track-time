@@ -1,7 +1,5 @@
 {
-  "cSpell.words": [
-    "Dexie"
-  ],
+  "cSpell.words": ["Dexie"],
   "chat.tools.terminal.autoApprove": {
     "/^npm exec -- tsc --noEmit$/": {
       "approve": true,
