@@ -12,6 +12,7 @@ import {
 import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
 import { useSwipeNavigation } from '@/components/ui/useSwipeNavigation'
+import { SwipeCard } from '@/components/ui/SwipeCard'
 import { ALL_TAG_ID, UPCOMING_TAG_ID } from '@/helpers/indexedDB'
 import type { EventWithTags } from '@/types/event'
 import { cn } from '@/lib/utils'
@@ -140,9 +141,9 @@ const ListEventsContent = () => {
           style={{ transform: 'translate3d(0, 0, 0)' }}
         >
           {previousTagId && (
-            <div
+            <SwipeCard
               key={previousTagId}
-              className="pointer-events-none absolute top-0 right-[calc(100%+0.75rem)] h-full w-full"
+              position="right"
               aria-hidden="true"
               inert
             >
@@ -150,7 +151,7 @@ const ListEventsContent = () => {
                 events={previewEventsByTag[previousTagId] ?? []}
                 activeTagId={previousTagId}
               />
-            </div>
+            </SwipeCard>
           )}
 
           {canReorder ? (
@@ -171,17 +172,12 @@ const ListEventsContent = () => {
           )}
 
           {nextTagId && (
-            <div
-              key={nextTagId}
-              className="pointer-events-none absolute top-0 left-[calc(100%+0.75rem)] h-full w-full"
-              aria-hidden="true"
-              inert
-            >
+            <SwipeCard key={nextTagId} position="left" aria-hidden="true" inert>
               <PreviewPanel
-                events={previewEventsByTag[nextTagId] ?? []}
+                events={previewEventsByTab[nextTagId] ?? []}
                 activeTagId={nextTagId}
               />
-            </div>
+            </SwipeCard>
           )}
         </div>
       </div>
