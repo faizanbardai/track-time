@@ -9,6 +9,7 @@
     },
     "npx tsc": true,
     "npx eslint": true,
-    "npx prettier": true
+    "npx prettier": true,
+    "npx vitest": true
   }
 }

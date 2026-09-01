@@ -11,7 +11,7 @@ import {
 } from '@/components/Event/EventListClock'
 import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
-import { useTagSwipeNavigation } from '@/components/Event/useTagSwipeNavigation'
+import { useSwipeNavigation } from '@/components/ui/useSwipeNavigation'
 import { ALL_TAG_ID, UPCOMING_TAG_ID } from '@/helpers/indexedDB'
 import type { EventWithTags } from '@/types/event'
 import { cn } from '@/lib/utils'
@@ -90,15 +90,23 @@ const ListEventsContent = () => {
   const nextTagId = tags[activeTagIndex + 1]?.id
   const {
     bind: swipeNavigation,
+    cancel: cancelSwipeNavigation,
     isSettling,
     trackRef,
-  } = useTagSwipeNavigation({
-    activeTagId,
-    tags,
-    onSelectTag: handleSelectTag,
+  } = useSwipeNavigation({
+    activeKey: activeTagId,
+    keys: tags.map(({ id }) => id),
+    onSelect: handleSelectTag,
     onSwipeCommit: setDisplayedTagId,
     disabled: isSorting,
   })
+  const selectTagFromBottomBar = useCallback(
+    (tagId: string) => {
+      cancelSwipeNavigation()
+      handleSelectTag(tagId)
+    },
+    [cancelSwipeNavigation, handleSelectTag],
+  )
   const [previewEventsByTag, setPreviewEventsByTag] = useState(eventsByTag)
   useEffect(() => {
     if (shouldRefreshSwipePreview(isSettling)) {
@@ -180,7 +188,7 @@ const ListEventsContent = () => {
       <EventBottomBar
         activeTagId={displayedTagId}
         tags={tags}
-        onSelectTag={handleSelectTag}
+        onSelectTag={selectTagFromBottomBar}
       />
     </div>
   )
