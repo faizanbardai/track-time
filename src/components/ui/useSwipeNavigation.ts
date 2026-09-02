@@ -7,7 +7,6 @@ import {
   useState,
 } from 'react'
 import { type SwipeEventData, useSwipeable } from 'react-swipeable'
-import type { Tag } from '@/types/event'
 
 const TRACKING_DELTA = 8
 const HORIZONTAL_INTENT_RATIO = 1.25
@@ -19,7 +18,7 @@ const EDGE_RESISTANCE = 0.18
 const SETTLE_DURATION = 260
 const CLICK_SUPPRESSION_DURATION = 500
 const INTERACTIVE_TARGET_SELECTOR =
-  'a, button, input, select, textarea, [role="button"]:not([data-swipe-navigation-drag-surface]), [data-swipe-navigation-ignore]'
+  'a, button, input, label, select, textarea, [role="button"]:not([data-swipe-navigation-drag-surface]), [data-swipe-navigation-ignore]'
 
 type SwipeDirection = 'next' | 'previous'
 
@@ -29,7 +28,7 @@ const prefersReducedMotion = () =>
 export const hasHorizontalSwipeIntent = (absX: number, absY: number) =>
   absX >= absY * HORIZONTAL_INTENT_RATIO
 
-export const shouldCompleteTagSwipe = (
+export const shouldCompleteSwipe = (
   absX: number,
   absY: number,
   velocityX: number,
@@ -47,29 +46,29 @@ export const shouldCompleteTagSwipe = (
   )
 }
 
-export const getAdjacentTagId = (
-  tags: Array<Pick<Tag, 'id'>>,
-  activeTagId: string,
+export const getAdjacentKey = <T extends string>(
+  keys: readonly T[],
+  activeKey: T,
   direction: SwipeDirection,
 ) => {
-  const activeIndex = tags.findIndex(({ id }) => id === activeTagId)
+  const activeIndex = keys.indexOf(activeKey)
   if (activeIndex === -1) return null
 
   const nextIndex = activeIndex + (direction === 'next' ? 1 : -1)
-  return tags[nextIndex]?.id ?? null
+  return keys[nextIndex] ?? null
 }
 
-export const useTagSwipeNavigation = ({
-  activeTagId,
-  tags,
-  onSelectTag,
+export const useSwipeNavigation = <T extends string>({
+  activeKey,
+  keys,
+  onSelect,
   onSwipeCommit,
   disabled = false,
 }: {
-  activeTagId: string
-  tags: Tag[]
-  onSelectTag: (tagId: string) => void
-  onSwipeCommit?: (tagId: string) => void
+  activeKey: T
+  keys: readonly T[]
+  onSelect: (key: T) => void
+  onSwipeCommit?: (key: T) => void
   disabled?: boolean
 }) => {
   const pagerRef = useRef<HTMLElement | null>(null)
@@ -108,11 +107,10 @@ export const useTagSwipeNavigation = ({
   }, [])
 
   useLayoutEffect(() => {
-    if (isSettling) return
     clearSettleTimer()
     updateTrack(0, false)
     setIsSettling(false)
-  }, [activeTagId, clearSettleTimer, disabled, isSettling, updateTrack])
+  }, [activeKey, clearSettleTimer, disabled, updateTrack])
 
   const suppressNextClick = useCallback(() => {
     clearClickSuppressionTimer()
@@ -158,23 +156,16 @@ export const useTagSwipeNavigation = ({
       }
 
       const direction: SwipeDirection = swipe.deltaX < 0 ? 'next' : 'previous'
-      const adjacentTagId = getAdjacentTagId(tags, activeTagId, direction)
-      const offset = adjacentTagId
-        ? swipe.deltaX
-        : swipe.deltaX * EDGE_RESISTANCE
+      const adjacentKey = getAdjacentKey(keys, activeKey, direction)
+      const offset = adjacentKey ? swipe.deltaX : swipe.deltaX * EDGE_RESISTANCE
       updateTrack(offset, false)
     },
-    [activeTagId, disabled, isIgnoredTarget, isSettling, tags, updateTrack],
+    [activeKey, disabled, isIgnoredTarget, isSettling, keys, updateTrack],
   )
 
   const handleSwiped = useCallback(
     (swipe: SwipeEventData) => {
-      if (disabled) {
-        updateTrack(0, false)
-        return
-      }
-
-      if (isIgnoredTarget(swipe)) {
+      if (disabled || isIgnoredTarget(swipe)) {
         updateTrack(0, false)
         return
       }
@@ -186,51 +177,51 @@ export const useTagSwipeNavigation = ({
 
       suppressNextClick()
       const direction: SwipeDirection = swipe.deltaX < 0 ? 'next' : 'previous'
-      const adjacentTagId = getAdjacentTagId(tags, activeTagId, direction)
+      const adjacentKey = getAdjacentKey(keys, activeKey, direction)
       const viewportWidth = pagerRef.current?.clientWidth ?? 0
       const shouldComplete =
-        adjacentTagId !== null &&
+        adjacentKey !== null &&
         viewportWidth > 0 &&
-        shouldCompleteTagSwipe(
+        shouldCompleteSwipe(
           swipe.absX,
           swipe.absY,
           swipe.vxvy[0],
           viewportWidth,
         )
 
-      if (!shouldComplete || !adjacentTagId) {
+      if (!shouldComplete || !adjacentKey) {
         settleAtCenter()
         return
       }
 
       if (prefersReducedMotion()) {
         updateTrack(0, false)
-        onSwipeCommit?.(adjacentTagId)
-        onSelectTag(adjacentTagId)
+        onSwipeCommit?.(adjacentKey)
+        onSelect(adjacentKey)
         return
       }
 
       clearSettleTimer()
       setIsSettling(true)
       updateTrack(direction === 'next' ? -viewportWidth : viewportWidth, true)
-      onSwipeCommit?.(adjacentTagId)
+      onSwipeCommit?.(adjacentKey)
       settleTimerRef.current = setTimeout(() => {
         settleTimerRef.current = null
         updateTrack(0, false)
         setIsSettling(false)
-        onSelectTag(adjacentTagId)
+        onSelect(adjacentKey)
       }, SETTLE_DURATION)
     },
     [
-      activeTagId,
+      activeKey,
       clearSettleTimer,
       disabled,
       isIgnoredTarget,
+      keys,
+      onSelect,
       onSwipeCommit,
-      onSelectTag,
       settleAtCenter,
       suppressNextClick,
-      tags,
       updateTrack,
     ],
   )
@@ -276,6 +267,7 @@ export const useTagSwipeNavigation = ({
       onClickCapture,
       onTouchCancel: cancelSwipe,
     },
+    cancel: cancelSwipe,
     isSettling,
     trackRef,
   }

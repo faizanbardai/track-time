@@ -8,7 +8,7 @@ import { PATHS } from '@/constants/paths'
 
 export default function DataPage() {
   return (
-    <main className="grid gap-4">
+    <main className="grid min-h-[calc(100dvh-4.5rem)] grid-rows-[auto_1fr] gap-4 pb-24">
       <Button asChild variant="outline" className="justify-self-start">
         <Link href={PATHS.HOME}>
           <ArrowLeft aria-hidden="true" />

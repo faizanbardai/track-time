@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import dayjs from 'dayjs'
@@ -11,7 +12,8 @@ import {
 } from '@/components/Event/EventListClock'
 import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
-import { useTagSwipeNavigation } from '@/components/Event/useTagSwipeNavigation'
+import { useSwipeNavigation } from '@/components/ui/useSwipeNavigation'
+import { SwipeCard } from '@/components/ui/SwipeCard'
 import { ALL_TAG_ID, UPCOMING_TAG_ID } from '@/helpers/indexedDB'
 import type { EventWithTags } from '@/types/event'
 import { cn } from '@/lib/utils'
@@ -19,7 +21,7 @@ import { filterUpcomingEvents } from '@/helpers/eventViews'
 import { useCallback, useEffect, useState } from 'react'
 import { shouldRefreshSwipePreview } from './swipePreview'
 
-export const PreviewPanel = ({
+const PreviewPanelComponent = ({
   events,
   activeTagId,
 }: {
@@ -51,6 +53,8 @@ export const PreviewPanel = ({
     </div>
   )
 }
+
+export const PreviewPanel = React.memo(PreviewPanelComponent)
 
 export const ListEvents = () => {
   return (
@@ -90,15 +94,23 @@ const ListEventsContent = () => {
   const nextTagId = tags[activeTagIndex + 1]?.id
   const {
     bind: swipeNavigation,
+    cancel: cancelSwipeNavigation,
     isSettling,
     trackRef,
-  } = useTagSwipeNavigation({
-    activeTagId,
-    tags,
-    onSelectTag: handleSelectTag,
+  } = useSwipeNavigation({
+    activeKey: activeTagId,
+    keys: tags.map(({ id }) => id),
+    onSelect: handleSelectTag,
     onSwipeCommit: setDisplayedTagId,
     disabled: isSorting,
   })
+  const selectTagFromBottomBar = useCallback(
+    (tagId: string) => {
+      cancelSwipeNavigation()
+      handleSelectTag(tagId)
+    },
+    [cancelSwipeNavigation, handleSelectTag],
+  )
   const [previewEventsByTag, setPreviewEventsByTag] = useState(eventsByTag)
   useEffect(() => {
     if (shouldRefreshSwipePreview(isSettling)) {
@@ -132,9 +144,9 @@ const ListEventsContent = () => {
           style={{ transform: 'translate3d(0, 0, 0)' }}
         >
           {previousTagId && (
-            <div
+            <SwipeCard
               key={previousTagId}
-              className="pointer-events-none absolute top-0 right-full h-full w-full"
+              position="right"
               aria-hidden="true"
               inert
             >
@@ -142,7 +154,7 @@ const ListEventsContent = () => {
                 events={previewEventsByTag[previousTagId] ?? []}
                 activeTagId={previousTagId}
               />
-            </div>
+            </SwipeCard>
           )}
 
           {canReorder ? (
@@ -163,24 +175,19 @@ const ListEventsContent = () => {
           )}
 
           {nextTagId && (
-            <div
-              key={nextTagId}
-              className="pointer-events-none absolute top-0 left-full h-full w-full"
-              aria-hidden="true"
-              inert
-            >
+            <SwipeCard key={nextTagId} position="left" aria-hidden="true" inert>
               <PreviewPanel
                 events={previewEventsByTag[nextTagId] ?? []}
                 activeTagId={nextTagId}
               />
-            </div>
+            </SwipeCard>
           )}
         </div>
       </div>
       <EventBottomBar
         activeTagId={displayedTagId}
         tags={tags}
-        onSelectTag={handleSelectTag}
+        onSelectTag={selectTagFromBottomBar}
       />
     </div>
   )

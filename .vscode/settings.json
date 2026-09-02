@@ -1,7 +1,5 @@
 {
-  "cSpell.words": [
-    "Dexie"
-  ],
+  "cSpell.words": ["Dexie"],
   "chat.tools.terminal.autoApprove": {
     "/^npm exec -- tsc --noEmit$/": {
       "approve": true,
@@ -9,6 +7,7 @@
     },
     "npx tsc": true,
     "npx eslint": true,
-    "npx prettier": true
+    "npx prettier": true,
+    "npx vitest": true
   }
 }
