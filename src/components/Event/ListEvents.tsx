@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import dayjs from 'dayjs'
@@ -20,7 +21,7 @@ import { filterUpcomingEvents } from '@/helpers/eventViews'
 import { useCallback, useEffect, useState } from 'react'
 import { shouldRefreshSwipePreview } from './swipePreview'
 
-export const PreviewPanel = ({
+const PreviewPanelComponent = ({
   events,
   activeTagId,
 }: {
@@ -52,6 +53,8 @@ export const PreviewPanel = ({
     </div>
   )
 }
+
+export const PreviewPanel = React.memo(PreviewPanelComponent)
 
 export const ListEvents = () => {
   return (
