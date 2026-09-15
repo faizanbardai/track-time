@@ -1,85 +1,56 @@
-import dayjs, { Dayjs, OpUnitType } from 'dayjs'
-import { timeUnits } from '@/constants/units'
+import dayjs from 'dayjs'
 import type { Event } from '@/types/event'
-import type { TimeUnit } from '@/constants/units'
-
-type ProgressCycle = 'minute' | 'hour' | 'day' | 'month' | 'year'
-
-const progressUnitLabels: Record<TimeUnit, string> = {
-  seconds: 'seconds',
-  minutes: 'minutes',
-  hours: 'hours',
-  days: 'days',
-  months: 'months',
-  years: 'years',
-}
-
-const progressCycles: Record<TimeUnit, ProgressCycle | undefined> = {
-  seconds: 'minute',
-  minutes: 'hour',
-  hours: 'day',
-  days: 'month',
-  months: 'year',
-  years: undefined,
-}
-
-const progressMeasurements: Record<TimeUnit, TimeUnit | undefined> = {
-  seconds: undefined,
-  minutes: 'seconds',
-  hours: 'minutes',
-  days: 'hours',
-  months: 'days',
-  years: 'months',
-}
-
-const progressUnits = [...timeUnits].reverse()
-
-const getHighestSelectedUnit = (event: Event) =>
-  progressUnits.find((unit) => event[unit])
-
-const getProgressMeasurement = (event: Event) => {
-  const selectedUnit = getHighestSelectedUnit(event)
-  return selectedUnit ? progressMeasurements[selectedUnit] : undefined
-}
-
-const getYearCycle = (eventDate: Dayjs, now: Dayjs) => {
-  let start = eventDate.year(now.year())
-
-  if (start.isAfter(now)) start = start.subtract(1, 'year')
-
-  return { start, end: start.add(1, 'year') }
-}
-
-const getCycleBounds = (event: Event, cycle: ProgressCycle, now: Dayjs) => {
-  if (cycle === 'year') return getYearCycle(dayjs(event.datetime), now)
-
-  const start = now.startOf(cycle as OpUnitType)
-  return { start, end: start.add(1, cycle) }
-}
+import { getEventBounds, getEventStatus } from './eventTiming'
 
 export const calculateEventProgressDetails = (event: Event, now = dayjs()) => {
-  if (!event.progressEnabled) return null
+  const status = getEventStatus(event, now)
+  let { start, end } = getEventBounds(event)
+  let anniversary = false
 
-  const progressUnit = getProgressMeasurement(event)
-  if (!progressUnit) return null
+  if (status !== 'ongoing') {
+    const enabled =
+      event.anniversaryProgressEnabled ??
+      (!event.endDate && Boolean(event.progressEnabled))
+    if (!enabled || status === 'upcoming') return null
 
-  const cycle = progressCycles[progressUnit]
-  if (!cycle) return null
+    // Anniversaries use the selected calendar date, not the exclusive range boundary.
+    const zone = event.endDate ? event.endTimeZone : event.timeZone
+    const date = event.endDate ?? event.datetime
+    const anchor = !event.dateOnly && zone ? dayjs(date).tz(zone) : dayjs(date)
+    const localNow = !event.dateOnly && zone ? now.tz(zone) : now
+    const anniversaryIn = (year: number) => {
+      const calendar = anchor.year(year)
+      const value =
+        calendar.format('YYYY-MM-DD') +
+        (event.dateOnly ? 'T00:00:00' : anchor.format('[T]HH:mm:ss.SSS'))
+      // Reparse each year so its timezone offset follows daylight saving rules.
+      return !event.dateOnly && zone ? dayjs.tz(value, zone) : dayjs(value)
+    }
+    let year = localNow.year()
+    if (anniversaryIn(year).isAfter(now)) year -= 1
+    start = anniversaryIn(year)
+    end = anniversaryIn(year + 1)
+    anniversary = true
+  }
 
-  const { start, end } = getCycleBounds(event, cycle, now)
-  const cycleDuration = end.valueOf() - start.valueOf()
-  const elapsed = now.valueOf() - start.valueOf()
-  const progress = Math.min(1, Math.max(0, elapsed / cycleDuration))
-  const elapsedUnits = Math.min(
-    end.diff(start, progressUnit),
-    Math.max(0, now.diff(start, progressUnit)),
+  if (!end || !end.isAfter(start)) return null
+  const progress = Math.min(
+    1,
+    Math.max(
+      0,
+      (now.valueOf() - start.valueOf()) / (end.valueOf() - start.valueOf()),
+    ),
   )
-
+  const percent = anniversary
+    ? Math.floor(progress * 100)
+    : Math.round(progress * 100)
   return {
     progress,
-    elapsedUnits,
-    totalUnits: end.diff(start, progressUnit),
-    unit: progressUnitLabels[progressUnit],
-    description: `${elapsedUnits}/${end.diff(start, progressUnit)} ${progressUnitLabels[progressUnit]} · ${Math.round(progress * 100)}%`,
+    percent,
+    label: anniversary ? 'To next anniversary' : 'Event progress',
+    targetDate: anniversary ? end.format('DD MMM YYYY') : null,
+    description: anniversary
+      ? `${Math.floor(progress * 100)}% to next anniversary · ${end.format('DD MMM YYYY')}`
+      : `${Math.round(progress * 100)}% elapsed`,
   }
 }

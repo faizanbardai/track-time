@@ -232,3 +232,151 @@ describe('Adding an event from a tag view', () => {
     },
   )
 })
+
+describe('Event dates', () => {
+  it('saves an inclusive date-only range and removes its end when edited', async () => {
+    render(<CreateOrUpdateEvent event={null} />)
+    expect(screen.queryByText('Show progress')).toBeNull()
+    expect(screen.queryByLabelText('Start time')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Vacation' },
+    })
+    fireEvent.change(screen.getByLabelText('Date'), {
+      target: { value: '2026-08-10' },
+    })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Add end date' }))
+    fireEvent.change(screen.getByLabelText('End date'), {
+      target: { value: '2026-08-16' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }))
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/'))
+    const [event] = await listEventsByTag('all')
+    expect(event).toMatchObject({
+      dateOnly: true,
+      datetime: '2026-08-10',
+      endDate: '2026-08-16',
+    })
+    cleanup()
+    navigation.push.mockClear()
+    render(<CreateOrUpdateEvent event={event} />)
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Add end date' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Update Event' }))
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/'))
+    expect((await getEvent(event.id))?.endDate).toBeUndefined()
+  })
+
+  it('uses the selected start timezone for the end by default', async () => {
+    render(<CreateOrUpdateEvent event={null} />)
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Meeting' },
+    })
+    fireEvent.change(screen.getByLabelText('Date'), {
+      target: { value: '2026-08-10' },
+    })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include time' }))
+    fireEvent.change(screen.getByLabelText('Start time'), {
+      target: { value: '10:00' },
+    })
+    fireEvent.change(screen.getByLabelText('Start timezone'), {
+      target: { value: 'Tokyo' },
+    })
+    fireEvent.keyDown(screen.getByLabelText('Start timezone'), { key: 'Enter' })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Add end date' }))
+    expect(screen.queryByLabelText('End timezone')).toBeNull()
+    fireEvent.change(screen.getByLabelText('End date'), {
+      target: { value: '2026-08-10' },
+    })
+    fireEvent.change(screen.getByLabelText('End time'), {
+      target: { value: '11:00' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }))
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/'))
+    const [event] = await listEventsByTag('all')
+    expect(event).toMatchObject({
+      timeZone: 'Asia/Tokyo',
+      endTimeZone: 'Asia/Tokyo',
+      endDate: '2026-08-10T02:00:00.000Z',
+    })
+  })
+
+  it('validates timed ranges and saves timezone-aware endpoints', async () => {
+    render(<CreateOrUpdateEvent event={null} />)
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Flight' },
+    })
+    fireEvent.change(screen.getByLabelText('Date'), {
+      target: { value: '2026-08-10' },
+    })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include time' }))
+    fireEvent.change(screen.getByLabelText('Start time'), {
+      target: { value: '10:00' },
+    })
+    fireEvent.change(screen.getByLabelText('Start timezone'), {
+      target: { value: 'Europe/Berlin' },
+    })
+    fireEvent.keyDown(screen.getByLabelText('Start timezone'), { key: 'Enter' })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Add end date' }))
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'End uses a different timezone' }),
+    )
+    fireEvent.change(screen.getByLabelText('End date'), {
+      target: { value: '2026-08-10' },
+    })
+    fireEvent.change(screen.getByLabelText('End time'), {
+      target: { value: '08:00' },
+    })
+    fireEvent.change(screen.getByLabelText('End timezone'), {
+      target: { value: 'Europe/London' },
+    })
+    fireEvent.keyDown(screen.getByLabelText('End timezone'), { key: 'Enter' })
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }))
+    expect(await screen.findByText('End must be after start')).toBeTruthy()
+    expect(navigation.push).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('End time'), {
+      target: { value: '12:30' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }))
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/'))
+    const [event] = await listEventsByTag('all')
+    expect(event).toMatchObject({
+      dateOnly: false,
+      datetime: '2026-08-10T08:00:00.000Z',
+      endDate: '2026-08-10T11:30:00.000Z',
+      timeZone: 'Europe/Berlin',
+      endTimeZone: 'Europe/London',
+    })
+    cleanup()
+    render(<CreateOrUpdateEvent event={event} />)
+    expect(
+      (screen.getByLabelText('Start time') as HTMLInputElement).value,
+    ).toBe('10:00')
+    expect((screen.getByLabelText('End time') as HTMLInputElement).value).toBe(
+      '12:30',
+    )
+  })
+})
+
+it('saves, restores, and disables anniversary progress', async () => {
+  const { unmount } = render(<CreateOrUpdateEvent event={null} />)
+  fireEvent.change(screen.getByLabelText('Title'), {
+    target: { value: 'Birthday' },
+  })
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Show progress to next anniversary' }),
+  )
+  fireEvent.submit(document.getElementById('event-form')!)
+  await waitFor(() => expect(navigation.push).toHaveBeenCalled())
+  const saved = (await db.events.toArray())[0]
+  expect(saved.anniversaryProgressEnabled).toBe(true)
+  unmount()
+  render(<CreateOrUpdateEvent event={(await getEvent(saved.id))!} />)
+  const checkbox = screen.getByRole('checkbox', {
+    name: 'Show progress to next anniversary',
+  })
+  expect(checkbox.getAttribute('aria-checked')).toBe('true')
+  fireEvent.click(checkbox)
+  navigation.push.mockClear()
+  fireEvent.submit(document.getElementById('event-form')!)
+  await waitFor(() => expect(navigation.push).toHaveBeenCalled())
+  expect((await getEvent(saved.id))?.anniversaryProgressEnabled).toBe(false)
+})

@@ -95,6 +95,22 @@ const readDatabase = async () => ({
 const readTagOrder = async () => (await db.tagOrder.get('custom'))?.tagIds
 
 describe('backup and restore', () => {
+  it('preserves calendar dates and timezone metadata during validation', () => {
+    const backup = importedBackup()
+    Object.assign(backup.data.events[0], {
+      dateOnly: true,
+      datetime: '2026-08-10',
+      anniversaryProgressEnabled: true,
+      endDate: '2026-08-16',
+    })
+    Object.assign(backup.data.events[1], {
+      dateOnly: false,
+      timeZone: 'Europe/Berlin',
+      endTimeZone: 'Europe/London',
+    })
+    expect(validateBackup(backup)).toEqual(backup)
+  })
+
   beforeEach(async () => {
     vi.restoreAllMocks()
     await db.delete()
