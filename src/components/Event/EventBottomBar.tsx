@@ -6,6 +6,8 @@ import { PATHS } from '@/constants/paths'
 import type { Tag } from '@/types/event'
 import { useActiveTagPeek } from '@/components/Event/useActiveTagPeek'
 import { cn } from '@/lib/utils'
+import { BottomBar } from '@/components/ui/BottomBar'
+import { BottomPill } from '@/components/ui/BottomPill'
 
 interface EventBottomBarProps {
   activeTagId: string
@@ -90,7 +92,7 @@ export const EventBottomBar = ({
   const tagScrollerRef = useActiveTagPeek(activeTagId)
 
   return (
-    <div className="fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 z-20 w-[calc(100%-1rem)] max-w-[1184px] -translate-x-1/2">
+    <BottomBar className="max-w-[1184px]">
       <Button
         asChild
         size="icon"
@@ -105,36 +107,38 @@ export const EventBottomBar = ({
         </Link>
       </Button>
 
-      <nav
-        aria-label="Filter events by tag"
-        className="flex h-14 items-center overflow-hidden rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/85"
-      >
-        {allTag && (
+      <nav aria-label="Filter events by tag">
+        <BottomPill>
+          {allTag && (
+            <div className="shrink-0 border-r px-1 pr-2">
+              <TagButton
+                tag={allTag}
+                activeTagId={activeTagId}
+                onSelectTag={onSelectTag}
+              />
+            </div>
+          )}
           <div className="shrink-0 border-r px-1 pr-2">
-            <TagButton
-              tag={allTag}
+            <UpcomingButton
               activeTagId={activeTagId}
               onSelectTag={onSelectTag}
             />
           </div>
-        )}
-        <div className="shrink-0 border-r px-1 pr-2">
-          <UpcomingButton activeTagId={activeTagId} onSelectTag={onSelectTag} />
-        </div>
-        <div
-          ref={tagScrollerRef}
-          className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {customTags.map((tag) => (
-            <TagButton
-              key={tag.id}
-              tag={tag}
-              activeTagId={activeTagId}
-              onSelectTag={onSelectTag}
-            />
-          ))}
-        </div>
+          <div
+            ref={tagScrollerRef}
+            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {customTags.map((tag) => (
+              <TagButton
+                key={tag.id}
+                tag={tag}
+                activeTagId={activeTagId}
+                onSelectTag={onSelectTag}
+              />
+            ))}
+          </div>
+        </BottomPill>
       </nav>
-    </div>
+    </BottomBar>
   )
 }
