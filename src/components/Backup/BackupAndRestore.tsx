@@ -24,6 +24,12 @@ import type { BackupSummary, BackupV1 } from '@/types/backup'
 import { AlertDialog } from '@/components/ui/alert-dialog'
 import { useToast } from '@/components/providers/toast'
 import { useLoadingActions } from '@/components/providers/loading'
+import { SwipePager } from '@/components/ui/SwipePager'
+import { BottomPillSelector } from '@/components/ui/BottomPill'
+import { Download, Upload } from 'lucide-react'
+
+const BACKUP_MODES = ['backup', 'restore'] as const
+type BackupMode = (typeof BACKUP_MODES)[number]
 
 const MAX_BACKUP_FILE_BYTES = 50 * 1024 * 1024
 
@@ -63,6 +69,7 @@ export const BackupAndRestore = () => {
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false)
   const [importMessage, setImportMessage] = useState<string | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
+  const [activeMode, setActiveMode] = useState<BackupMode>('backup')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const fileReadId = useRef(0)
 
@@ -189,157 +196,200 @@ export const BackupAndRestore = () => {
     : 'Opening local storage…'
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Download a backup</CardTitle>
-          <CardDescription>
-            Export all events, tags, assignments, and ordering to an encrypted
-            JSON file.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleExport} className="grid gap-4">
-            <p className="text-sm text-muted-foreground">
-              The password cannot be recovered. You will need it to restore this
-              backup on any browser or device.
-            </p>
-            <div className="grid gap-2">
-              <Label htmlFor="export-password">Backup password</Label>
-              <Input
-                id="export-password"
-                type="password"
-                minLength={8}
-                autoComplete="new-password"
-                value={exportPassword}
-                onChange={(event) => setExportPassword(event.target.value)}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="confirm-password">Confirm password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                minLength={8}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                required
-              />
-            </div>
-            {!dbReady && (
-              <p className="text-sm text-destructive">{unavailableMessage}</p>
-            )}
-            {exportError && (
-              <p role="alert" className="text-sm text-destructive">
-                {exportError}
-              </p>
-            )}
-            {exportMessage && (
-              <p role="status" className="text-sm">
-                {exportMessage}
-              </p>
-            )}
-            <Button type="submit" disabled={!dbReady || exporting}>
-              {exporting ? 'Encrypting…' : 'Download encrypted backup'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <>
+      <SwipePager
+        activeKey={activeMode}
+        keys={BACKUP_MODES}
+        onSelect={setActiveMode}
+        keepMounted
+        tabIdBase="data"
+        testId="backup-swipe-surface"
+        renderPanel={(mode) =>
+          mode === 'backup' ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Download a backup</CardTitle>
+                <CardDescription>
+                  Export all events, tags, assignments, and ordering to an
+                  encrypted JSON file.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleExport} className="grid gap-4">
+                  <p className="text-sm text-muted-foreground">
+                    The password cannot be recovered. You will need it to
+                    restore this backup on any browser or device.
+                  </p>
+                  <div className="grid gap-2">
+                    <Label htmlFor="export-password">Backup password</Label>
+                    <Input
+                      id="export-password"
+                      type="password"
+                      minLength={8}
+                      autoComplete="new-password"
+                      value={exportPassword}
+                      onChange={(event) =>
+                        setExportPassword(event.target.value)
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="confirm-password">Confirm password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      minLength={8}
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(event) =>
+                        setConfirmPassword(event.target.value)
+                      }
+                      required
+                    />
+                  </div>
+                  {!dbReady && (
+                    <p className="text-sm text-destructive">
+                      {unavailableMessage}
+                    </p>
+                  )}
+                  {exportError && (
+                    <p role="alert" className="text-sm text-destructive">
+                      {exportError}
+                    </p>
+                  )}
+                  {exportMessage && (
+                    <p role="status" className="text-sm">
+                      {exportMessage}
+                    </p>
+                  )}
+                  <Button type="submit" disabled={!dbReady || exporting}>
+                    {exporting ? 'Encrypting…' : 'Download encrypted backup'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Restore a backup</CardTitle>
+                <CardDescription>
+                  Unlock and inspect a backup before replacing the data on this
+                  device.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="backup-file">Encrypted backup file</Label>
+                  <Input
+                    ref={fileInputRef}
+                    id="backup-file"
+                    type="file"
+                    accept="application/json,.json"
+                    onChange={(event) => void handleFile(event)}
+                    disabled={!dbReady || importing}
+                  />
+                </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Restore a backup</CardTitle>
-          <CardDescription>
-            Unlock and inspect a backup before replacing the data on this
-            device.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="backup-file">Encrypted backup file</Label>
-            <Input
-              ref={fileInputRef}
-              id="backup-file"
-              type="file"
-              accept="application/json,.json"
-              onChange={(event) => void handleFile(event)}
-              disabled={!dbReady || importing}
-            />
-          </div>
+                {selectedFile && !backup && (
+                  <form onSubmit={handleUnlock} className="grid gap-4">
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {selectedFile.name}
+                    </p>
+                    <div className="grid gap-2">
+                      <Label htmlFor="import-password">Backup password</Label>
+                      <Input
+                        id="import-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={importPassword}
+                        onChange={(event) =>
+                          setImportPassword(event.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="outline"
+                      disabled={!fileContents || !importPassword || importing}
+                    >
+                      {importing ? 'Unlocking…' : 'Unlock and preview'}
+                    </Button>
+                  </form>
+                )}
 
-          {selectedFile && !backup && (
-            <form onSubmit={handleUnlock} className="grid gap-4">
-              <p className="text-sm text-muted-foreground">
-                Selected: {selectedFile.name}
-              </p>
-              <div className="grid gap-2">
-                <Label htmlFor="import-password">Backup password</Label>
-                <Input
-                  id="import-password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={importPassword}
-                  onChange={(event) => setImportPassword(event.target.value)}
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                variant="outline"
-                disabled={!fileContents || !importPassword || importing}
-              >
-                {importing ? 'Unlocking…' : 'Unlock and preview'}
-              </Button>
-            </form>
-          )}
+                {summary && backup && (
+                  <div className="grid gap-4 rounded-md border p-4">
+                    <div>
+                      <h3 className="font-medium">Backup summary</h3>
+                      <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                        <dt className="text-muted-foreground">Exported</dt>
+                        <dd>{new Date(summary.exportedAt).toLocaleString()}</dd>
+                        <dt className="text-muted-foreground">Events</dt>
+                        <dd>{summary.eventCount}</dd>
+                        <dt className="text-muted-foreground">Custom tags</dt>
+                        <dd>{summary.customTagCount}</dd>
+                        <dt className="text-muted-foreground">Assignments</dt>
+                        <dd>{summary.assignmentCount}</dd>
+                      </dl>
+                    </div>
+                    <p className="text-sm font-medium text-destructive">
+                      Restoring replaces all current events, tags, assignments,
+                      and ordering on this device.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => setRestoreDialogOpen(true)}
+                      disabled={importing}
+                    >
+                      {importing ? 'Restoring…' : 'Replace data and restore'}
+                    </Button>
+                  </div>
+                )}
 
-          {summary && backup && (
-            <div className="grid gap-4 rounded-md border p-4">
-              <div>
-                <h3 className="font-medium">Backup summary</h3>
-                <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                  <dt className="text-muted-foreground">Exported</dt>
-                  <dd>{new Date(summary.exportedAt).toLocaleString()}</dd>
-                  <dt className="text-muted-foreground">Events</dt>
-                  <dd>{summary.eventCount}</dd>
-                  <dt className="text-muted-foreground">Custom tags</dt>
-                  <dd>{summary.customTagCount}</dd>
-                  <dt className="text-muted-foreground">Assignments</dt>
-                  <dd>{summary.assignmentCount}</dd>
-                </dl>
-              </div>
-              <p className="text-sm font-medium text-destructive">
-                Restoring replaces all current events, tags, assignments, and
-                ordering on this device.
-              </p>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => setRestoreDialogOpen(true)}
-                disabled={importing}
-              >
-                {importing ? 'Restoring…' : 'Replace data and restore'}
-              </Button>
-            </div>
-          )}
+                {!dbReady && (
+                  <p className="text-sm text-destructive">
+                    {unavailableMessage}
+                  </p>
+                )}
+                {importError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {importError}
+                  </p>
+                )}
+                {importMessage && (
+                  <p role="status" className="text-sm">
+                    {importMessage}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )
+        }
+        renderNavigation={(value, select) => (
+          <BottomPillSelector
+            ariaLabel="Backup and restore"
+            idBase="data"
+            value={value}
+            options={[
+              {
+                value: 'backup',
+                label: 'Backup',
+                icon: <Download aria-hidden="true" className="size-4" />,
+              },
+              {
+                value: 'restore',
+                label: 'Restore',
+                icon: <Upload aria-hidden="true" className="size-4" />,
+              },
+            ]}
+            onValueChange={select}
+          />
+        )}
+      />
 
-          {!dbReady && (
-            <p className="text-sm text-destructive">{unavailableMessage}</p>
-          )}
-          {importError && (
-            <p role="alert" className="text-sm text-destructive">
-              {importError}
-            </p>
-          )}
-          {importMessage && (
-            <p role="status" className="text-sm">
-              {importMessage}
-            </p>
-          )}
-        </CardContent>
-      </Card>
       {summary && (
         <AlertDialog
           open={restoreDialogOpen}
@@ -351,6 +401,6 @@ export const BackupAndRestore = () => {
           destructive
         />
       )}
-    </div>
+    </>
   )
 }

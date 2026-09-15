@@ -66,9 +66,11 @@ export default function RootLayout({
           <LoadingProvider>
             <IndexedDBProvider>
               <ToastProvider>
-                <AppHeader />
-                <GlobalLoader />
-                <Container>{children}</Container>
+                <div className="grid min-h-dvh grid-rows-[auto_auto_1fr]">
+                  <AppHeader />
+                  <GlobalLoader />
+                  <Container className="grid min-w-0">{children}</Container>
+                </div>
               </ToastProvider>
             </IndexedDBProvider>
           </LoadingProvider>
