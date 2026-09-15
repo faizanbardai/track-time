@@ -1,4 +1,5 @@
 import { calculateTimeDiff } from '@/helpers/datetime/calculateTimeDiff'
+import { getEventCounter } from '@/helpers/datetime/eventTiming'
 import { Event } from '@/types/event'
 import { Dayjs } from 'dayjs'
 import { useEventListClock } from '@/components/Event/EventListClock'
@@ -6,24 +7,57 @@ import { useEventListClock } from '@/components/Event/EventListClock'
 export const Counter = ({
   event,
   now,
-  from = event.endDate ?? event.datetime,
+  from,
 }: {
   event: Event
   now: Dayjs
   from?: string
 }) => {
-  const timeDiff = calculateTimeDiff(event, from, now)
+  const counter = getEventCounter(event, now)
+  const displayEvent = event.dateOnly
+    ? {
+        ...event,
+        hours: false,
+        minutes: false,
+        seconds: false,
+        days: event.days || (!event.months && !event.years),
+      }
+    : event
+  const timeDiff = calculateTimeDiff(
+    displayEvent,
+    from ?? counter.from.toISOString(),
+    from ? now : counter.to,
+  )
 
-  const years = event.years ? <span>{timeDiff.years}Y </span> : null
-  const months = event.months ? <span>{timeDiff.months}M </span> : null
-  const days = event.days ? <span>{timeDiff.days}d </span> : null
-  const hours = event.hours ? <span>{timeDiff.hours}h </span> : null
-  const minutes = event.minutes ? <span>{timeDiff.minutes}m </span> : null
-  const seconds = event.seconds ? <span>{timeDiff.seconds}s </span> : null
+  const units = [
+    ['years', 'y'],
+    ['months', 'mo'],
+    ['days', 'd'],
+    ['hours', 'h'],
+    ['minutes', 'm'],
+    ['seconds', 's'],
+  ] as const
+  const selected = units.filter(([unit]) => displayEvent[unit])
+  const nonzero = selected.filter(([unit]) => timeDiff[unit] > 0)
+  const visible = nonzero.length ? nonzero : selected.slice(-1)
 
   return (
-    <span>
-      {years} {months} {days} {hours} {minutes} {seconds}
+    <span className="inline-flex max-w-full">
+      <span className="sr-only">{counter.label}</span>
+      <span className="flex flex-wrap gap-x-2 gap-y-1 sm:justify-end">
+        {counter.duration || (
+          <>
+            {visible.map(([unit, suffix]) => (
+              <span key={unit} className="whitespace-nowrap">
+                {timeDiff[unit]}
+                <span className="ml-0.5 text-[0.6em] font-medium tracking-normal">
+                  {suffix}
+                </span>
+              </span>
+            ))}
+          </>
+        )}
+      </span>
     </span>
   )
 }

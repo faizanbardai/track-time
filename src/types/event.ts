@@ -3,7 +3,12 @@ export interface Event {
   title: string
   datetime: string
   endDate?: string
+  /** Legacy preference used as a fallback for single-date anniversaries. */
   progressEnabled?: boolean
+  anniversaryProgressEnabled?: boolean
+  dateOnly?: boolean
+  timeZone?: string
+  endTimeZone?: string
   seconds: boolean
   minutes: boolean
   hours: boolean
@@ -58,5 +63,9 @@ export type EventFormData = {
   days: boolean
   months: boolean
   years: boolean
-  progressEnabled: boolean
+  dateOnly: boolean
+  hasEnd: boolean
+  anniversaryProgressEnabled: boolean
+  timeZone: string
+  endTimeZone: string
 }

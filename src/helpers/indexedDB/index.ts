@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import Dexie, { type Table } from 'dexie'
 import { v4 as uuid } from 'uuid'
 import type {
@@ -402,10 +403,9 @@ export const listEventsByTag = async (
 export const listUpcomingEvents = async (
   now = new Date(),
 ): Promise<EventWithTags[]> => {
-  const events = await db.events
-    .where('datetime')
-    .above(now.toISOString())
-    .sortBy('datetime')
+  const events = (await db.events.toArray())
+    .filter((event) => dayjs(event.datetime).valueOf() > now.getTime())
+    .sort((a, b) => dayjs(a.datetime).valueOf() - dayjs(b.datetime).valueOf())
 
   return attachTagsToEvents(events)
 }

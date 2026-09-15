@@ -2,6 +2,7 @@
 
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ListEvent } from './ListEvent'
 import { LiveCounter } from '@/components/Counter'
 import { calculateDuration } from '@/helpers/datetime/calculateTimeDiff'
 import { EventListClock } from '@/components/Event/EventListClock'
@@ -11,6 +12,10 @@ import type { Event, EventWithTags } from '@/types/event'
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
+
+const counterText = (text: string) => (_: string, element: Element | null) =>
+  element?.textContent === text &&
+  Array.from(element.children).every((child) => child.textContent !== text)
 
 const createEvent = (
   id: string,
@@ -70,13 +75,13 @@ describe('EventListClock', () => {
     )
 
     expect(vi.getTimerCount()).toBe(1)
-    expect(screen.getAllByText('1s')).toHaveLength(2)
+    expect(screen.getAllByText(counterText('1s'))).toHaveLength(2)
 
     act(() => {
       vi.advanceTimersByTime(1000)
     })
 
-    expect(screen.getAllByText('2s')).toHaveLength(2)
+    expect(screen.getAllByText(counterText('2s'))).toHaveLength(2)
   })
 
   it('updates a counter after a future datetime is reached', () => {
@@ -86,16 +91,16 @@ describe('EventListClock', () => {
       </EventListClock>,
     )
 
-    expect(screen.getByText('2s')).toBeTruthy()
+    expect(screen.getByText(counterText('2s'))).toBeTruthy()
 
     act(() => {
       vi.advanceTimersByTime(3000)
     })
 
-    expect(screen.getByText('1s')).toBeTruthy()
+    expect(screen.getByText(counterText('1s'))).toBeTruthy()
   })
 
-  it('uses the end date as the live counter start when available', () => {
+  it('counts time since completion after the event ends', () => {
     render(
       <EventListClock>
         <LiveCounter
@@ -108,7 +113,46 @@ describe('EventListClock', () => {
       </EventListClock>,
     )
 
-    expect(screen.getByText('1s')).toBeTruthy()
+    expect(screen.getByText('Since completion')).toBeTruthy()
+    expect(screen.getByText(counterText('1s'))).toBeTruthy()
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+    expect(screen.getByText(counterText('2s'))).toBeTruthy()
+  })
+
+  it('updates progress and switches to completed at the end', () => {
+    render(
+      <EventListClock>
+        <ListEvent
+          liveCounter
+          event={{
+            ...createEvent(
+              'flight',
+              '2024-12-31T23:59:58.000Z',
+              '2025-01-01T00:00:02.000Z',
+            ),
+            tags: [],
+          }}
+        />
+      </EventListClock>,
+    )
+    expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe(
+      '50',
+    )
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+    expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe(
+      '75',
+    )
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+    expect(screen.getByText('Duration · 4s')).toBeTruthy()
+    expect(screen.getByText(counterText('0s'))).toBeTruthy()
+    expect(screen.queryByRole('progressbar')).toBeNull()
+    expect(screen.getByText('Since completion')).toBeTruthy()
   })
 
   it('calculates duration independently of the selected counter units', () => {
@@ -130,13 +174,13 @@ describe('EventListClock', () => {
     )
 
     expect(screen.getByText('Event preview')).toBeTruthy()
-    expect(screen.getByText('0s')).toBeTruthy()
+    expect(screen.getByText(counterText('0s'))).toBeTruthy()
 
     act(() => {
       vi.advanceTimersByTime(3000)
     })
 
-    expect(screen.getByText('0s')).toBeTruthy()
+    expect(screen.getByText(counterText('0s'))).toBeTruthy()
     expect(vi.getTimerCount()).toBe(1)
 
     rerender(
@@ -144,6 +188,6 @@ describe('EventListClock', () => {
         <PreviewPanel events={[createEventWithTags('preview')]} />
       </EventListClock>,
     )
-    expect(screen.getByText('3s')).toBeTruthy()
+    expect(screen.getByText(counterText('3s'))).toBeTruthy()
   })
 })

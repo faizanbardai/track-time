@@ -1,5 +1,9 @@
-import { Counter, LiveCounter } from '@/components/Counter'
-import { calculateDuration } from '@/helpers/datetime/calculateTimeDiff'
+import { Counter } from '@/components/Counter'
+import {
+  formatEventDate,
+  getEventDurationLabel,
+} from '@/helpers/datetime/eventTiming'
+import { useEventListClock } from './EventListClock'
 import { calculateEventProgressDetails } from '@/helpers/datetime/calculateEventProgress'
 import { Card, CardTitle } from '@/components/ui/card'
 import { EventWithTags } from '@/types/event'
@@ -17,37 +21,26 @@ interface ListEventProps {
   activeTagId?: string
 }
 
-export const ListEvent = ({
+const LiveListEvent = (props: EventPageCardProps) => {
+  const now = useEventListClock()
+  return <EventCard {...props} now={now} />
+}
+
+type EventPageCardProps = Omit<ListEventProps, 'liveCounter'>
+
+export const ListEvent = ({ liveCounter, ...props }: ListEventProps) =>
+  liveCounter ? <LiveListEvent {...props} /> : <EventCard {...props} />
+
+const EventCard = ({
   event,
   now,
-  liveCounter = false,
   draggable = false,
   activeTagId,
-}: ListEventProps) => {
+}: EventPageCardProps) => {
   const router = useRouter()
-  const eventDate = dayjs(event.datetime)
-  const displayEventDatetime =
-    eventDate.hour() === 0 && eventDate.minute() === 0
-      ? eventDate.format('DD MMM YYYY')
-      : eventDate.format('DD MMM YYYY HH:mm')
-  const endDate = event.endDate ? dayjs(event.endDate) : null
-  const displayEndDate = endDate?.format('DD MMM YYYY')
-  const duration = endDate
-    ? calculateDuration(event.datetime, event.endDate as string)
-    : null
-  const displayDuration = duration
-    ? duration.years > 0
-      ? `${duration.years}Y`
-      : duration.months > 0
-        ? `${duration.months}M`
-        : duration.days > 0
-          ? `${duration.days}D`
-          : duration.hours > 0
-            ? `${duration.hours}h`
-            : duration.minutes > 0
-              ? `${duration.minutes}m`
-              : `${duration.seconds}s`
-    : null
+  const displayEventDatetime = formatEventDate(event)
+  const displayEndDate = event.endDate ? formatEventDate(event, true) : null
+  const displayDuration = getEventDurationLabel(event)
   const displayTags = event.tags.filter(
     (tag) => !tag.system && tag.id !== activeTagId,
   )
@@ -75,57 +68,64 @@ export const ListEvent = ({
       onMouseEnter={prefetchEvent}
       onFocus={prefetchEvent}
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0 px-4 py-4">
-        <div className="min-w-0 flex-1">
-          <CardTitle className="truncate text-lg font-normal leading-tight">
+      <div className="grid min-w-0 gap-2 p-3 sm:gap-3 sm:p-4">
+        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <CardTitle className="min-w-0 max-w-full flex-auto line-clamp-2 break-words text-base font-medium leading-snug sm:text-lg">
             {event.title}
           </CardTitle>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {displayEndDate ? (
-              <>
-                {displayEndDate} <span aria-hidden="true">|</span>{' '}
-                <span className="font-mono tabular-nums">
-                  {displayDuration}
-                </span>
-              </>
-            ) : (
-              displayEventDatetime
-            )}
+          <div className="ml-auto max-w-full shrink-0 text-right text-2xl font-semibold leading-tight tabular-nums tracking-tight text-timer sm:text-3xl">
+            {now ? <Counter event={event} now={now} /> : null}
           </div>
         </div>
-        <div className="min-w-[7.5rem] whitespace-nowrap text-right font-mono text-3xl font-semibold leading-none tracking-tight tabular-nums text-timer">
-          {liveCounter ? (
-            <LiveCounter event={event} />
-          ) : now ? (
-            <Counter event={event} now={now} />
-          ) : null}
+        <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-3 gap-y-1.5">
+          <div className="min-w-0 max-w-full flex-auto break-words text-xs leading-relaxed text-foreground/70 sm:text-sm">
+            <p>
+              {displayEventDatetime}
+              {displayEndDate && <> – {displayEndDate}</>}
+            </p>
+            {displayDuration && (
+              <p className="mt-0.5 sm:mt-1">Duration · {displayDuration}</p>
+            )}
+          </div>
+          {displayTags.length > 0 && (
+            <div className="ml-auto flex max-w-full flex-wrap justify-end gap-1.5">
+              {displayTags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="max-w-full break-words rounded-full bg-tag/15 px-2 py-0.5 text-xs font-medium text-foreground/75"
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        {displayTags.length > 0 && (
-          <div className="col-span-full mt-1 flex flex-wrap gap-1">
-            {displayTags.map((tag) => (
-              <span
-                key={tag.id}
-                className="rounded-full bg-tag px-2 py-0.5 text-xs font-medium text-tag-foreground"
-              >
-                {tag.name}
+        {progressDetails && (
+          <div className="grid gap-1.5 border-t border-border/60 pt-2 sm:gap-2 sm:pt-3">
+            <div className="flex items-center gap-2 text-xs text-foreground/70">
+              <span>{progressDetails.targetDate ?? progressDetails.label}</span>
+              <span aria-hidden="true">|</span>
+              <span className="shrink-0 tabular-nums">
+                {progressDetails.percent}%
               </span>
-            ))}
+            </div>
+            <div
+              aria-label={progressDetails.description}
+              className="h-1 sm:h-1.5 w-full overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressDetails.percent}
+            >
+              <div
+                aria-hidden="true"
+                className="h-full rounded-full bg-primary transition-[width] duration-500 motion-reduce:transition-none"
+                style={{ width: `${progressDetails.progress * 100}%` }}
+              />
+            </div>
           </div>
         )}
       </div>
-      {progressDetails && (
-        <div
-          aria-label={progressDetails.description}
-          className="h-1 w-full bg-muted"
-          role="img"
-        >
-          <div
-            aria-hidden="true"
-            className="h-full bg-primary transition-[width] duration-500"
-            style={{ width: `${progressDetails.progress * 100}%` }}
-          />
-        </div>
-      )}
     </Card>
   )
 }

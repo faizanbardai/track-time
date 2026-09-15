@@ -1,3 +1,4 @@
+import { isValidTimeZone } from '@/helpers/datetime/eventTiming'
 import {
   ALL_TAG_ID,
   db,
@@ -60,10 +61,30 @@ const requireIsoDate = (value: unknown, label: string) => {
 const parseEvent = (value: unknown, index: number): Event => {
   const item = requireRecord(value, `Event ${index + 1}`)
   const prefix = `Event ${index + 1}`
+  const dateOnly =
+    item.dateOnly === undefined
+      ? undefined
+      : requireBoolean(item.dateOnly, `${prefix} dateOnly`)
+  const requireEventDate = (value: unknown, label: string) => {
+    if (!dateOnly) return requireIsoDate(value, label)
+    const date = requireString(value, label)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
+      throw new Error(`${label} must be a calendar date`)
+    requireIsoDate(`${date}T00:00:00.000Z`, label)
+    return date
+  }
+  const zones: { timeZone?: string; endTimeZone?: string } = {}
+  for (const key of ['timeZone', 'endTimeZone'] as const) {
+    if (item[key] !== undefined) {
+      const zone = requireString(item[key], `${prefix} ${key}`)
+      if (!isValidTimeZone(zone)) throw new Error(`${prefix} ${key} is invalid`)
+      zones[key] = zone
+    }
+  }
   const endDate =
     item.endDate === undefined
       ? undefined
-      : requireIsoDate(item.endDate, `${prefix} endDate`)
+      : requireEventDate(item.endDate, `${prefix} endDate`)
   const progressEnabled =
     item.progressEnabled === undefined
       ? undefined
@@ -72,8 +93,18 @@ const parseEvent = (value: unknown, index: number): Event => {
   return {
     id: requireString(item.id, `${prefix} id`),
     title: requireString(item.title, `${prefix} title`),
-    datetime: requireIsoDate(item.datetime, `${prefix} datetime`),
+    datetime: requireEventDate(item.datetime, `${prefix} datetime`),
     ...(endDate ? { endDate } : {}),
+    ...(dateOnly === undefined ? {} : { dateOnly }),
+    ...zones,
+    ...(item.anniversaryProgressEnabled === undefined
+      ? {}
+      : {
+          anniversaryProgressEnabled: requireBoolean(
+            item.anniversaryProgressEnabled,
+            `${prefix} anniversaryProgressEnabled`,
+          ),
+        }),
     ...(progressEnabled === undefined ? {} : { progressEnabled }),
     seconds: requireBoolean(item.seconds, `${prefix} seconds`),
     minutes: requireBoolean(item.minutes, `${prefix} minutes`),
