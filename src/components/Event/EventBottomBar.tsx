@@ -90,6 +90,10 @@ export const EventBottomBar = ({
     ({ id }) => id !== ALL_TAG_ID && id !== UPCOMING_TAG_ID,
   )
   const tagScrollerRef = useActiveTagPeek(activeTagId)
+  const selectedTag = customTags.find(({ id }) => id === activeTagId)
+  const newEventPath = selectedTag
+    ? `${PATHS.EVENT}?${new URLSearchParams({ tag: selectedTag.id })}`
+    : PATHS.EVENT
 
   return (
     <BottomBar className="max-w-[1184px]">
@@ -97,12 +101,10 @@ export const EventBottomBar = ({
         asChild
         size="icon"
         className="absolute right-2 bottom-16 z-10 size-14 rounded-full shadow-lg"
+        aria-label="Add new entry"
+        title="Add new entry"
       >
-        <Link
-          href={PATHS.EVENT}
-          aria-label="Add new entry"
-          title="Add new entry"
-        >
+        <Link href={newEventPath}>
           <Plus aria-hidden="true" className="size-6" />
         </Link>
       </Button>

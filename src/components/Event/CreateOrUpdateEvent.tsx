@@ -18,10 +18,14 @@ import { ArrowLeft } from 'lucide-react'
 
 interface EventPageProps {
   event: EventWithTags | null
+  defaultTags?: string
 }
 
-const getFormDefaultValues = (event: EventWithTags | null): EventFormData => {
-  if (!event?.id) return getEventDefaultValues()
+const getFormDefaultValues = (
+  event: EventWithTags | null,
+  defaultTags: string,
+): EventFormData => {
+  if (!event?.id) return { ...getEventDefaultValues(), tags: defaultTags }
 
   const { createdAt, updatedAt, datetime, endDate, tags, ...rest } = event
   return {
@@ -35,10 +39,10 @@ const getFormDefaultValues = (event: EventWithTags | null): EventFormData => {
   }
 }
 
-const CreateOrUpdateEvent = ({ event }: EventPageProps) => {
+const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
   const { register, handleSubmit, control, watch, formState } =
     useForm<EventFormData>({
-      defaultValues: getFormDefaultValues(event),
+      defaultValues: getFormDefaultValues(event, defaultTags),
     })
   const startDate = watch('date')
   const startTime = watch('time')
@@ -47,7 +51,7 @@ const CreateOrUpdateEvent = ({ event }: EventPageProps) => {
   const { onSubmit } = useEvent()
 
   return (
-    <div className="grid gap-4 pb-20">
+    <div className="grid content-start gap-4 pb-20">
       <div className="flex items-center justify-between">
         <Button asChild variant="outline">
           <Link href={PATHS.HOME}>
