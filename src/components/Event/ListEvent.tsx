@@ -1,6 +1,6 @@
 import { Counter } from '@/components/Counter'
 import {
-  formatEventDate,
+  formatEventCardDate,
   getEventDurationLabel,
 } from '@/helpers/datetime/eventTiming'
 import { useEventListClock } from './EventListClock'
@@ -38,8 +38,7 @@ const EventCard = ({
   activeTagId,
 }: EventPageCardProps) => {
   const router = useRouter()
-  const displayEventDatetime = formatEventDate(event)
-  const displayEndDate = event.endDate ? formatEventDate(event, true) : null
+  const displayEventDatetime = formatEventCardDate(event)
   const displayDuration = getEventDurationLabel(event)
   const displayTags = event.tags.filter(
     (tag) => !tag.system && tag.id !== activeTagId,
@@ -79,10 +78,7 @@ const EventCard = ({
         </div>
         <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-3 gap-y-1.5">
           <div className="min-w-0 max-w-full flex-auto break-words text-xs leading-relaxed text-foreground/70 sm:text-sm">
-            <p>
-              {displayEventDatetime}
-              {displayEndDate && <> – {displayEndDate}</>}
-            </p>
+            <p>{displayEventDatetime}</p>
             {displayDuration && (
               <p className="mt-0.5 sm:mt-1">Duration · {displayDuration}</p>
             )}

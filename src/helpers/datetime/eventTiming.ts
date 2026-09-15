@@ -137,14 +137,44 @@ export const getEventDurationLabel = (event: Event) => {
     .join(' ')
 }
 
-export const formatEventDate = (event: Event, end = false) => {
+export const formatEventDate = (
+  event: Event,
+  end = false,
+  zoneLabel?: string,
+) => {
   const value = end ? event.endDate! : event.datetime
   const zone = end ? event.endTimeZone : event.timeZone
   const date = zone && !event.dateOnly ? dayjs(value).tz(zone) : dayjs(value)
   const showTime = !event.dateOnly && (date.hour() !== 0 || date.minute() !== 0)
   return (
     date.format(showTime ? 'DD MMM YYYY HH:mm' : 'DD MMM YYYY') +
-    (zone && !event.dateOnly ? ` (${zone})` : '')
+    (zone && !event.dateOnly && zoneLabel !== ''
+      ? ` (${zoneLabel ?? zone})`
+      : '')
+  )
+}
+
+export const formatEventCardDate = (
+  event: Event,
+  userZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+) => {
+  const canonicalZone = (zone: string) =>
+    new Intl.DateTimeFormat('en', { timeZone: zone }).resolvedOptions().timeZone
+  const localZone = canonicalZone(userZone)
+  const startZone = canonicalZone(event.timeZone || userZone)
+  const endZone = canonicalZone(event.endTimeZone || userZone)
+  const differentZones = Boolean(event.endDate) && startZone !== endZone
+  const label = (zone: string) => zone.split('/').at(-1)!.replaceAll('_', ' ')
+  const startLabel = differentZones
+    ? label(startZone)
+    : !event.endDate && startZone !== localZone
+      ? label(startZone)
+      : ''
+  const endLabel = differentZones || endZone !== localZone ? label(endZone) : ''
+
+  return (
+    formatEventDate(event, false, startLabel) +
+    (event.endDate ? ` – ${formatEventDate(event, true, endLabel)}` : '')
   )
 }
 
