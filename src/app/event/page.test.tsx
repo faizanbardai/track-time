@@ -19,6 +19,7 @@ import { SwipePager } from '@/components/ui/SwipePager'
 const navigation = vi.hoisted(() => ({
   params: new URLSearchParams(),
   push: vi.fn(),
+  replace: vi.fn(),
 }))
 const loading = vi.hoisted(() => ({
   startLoading: vi.fn(),
@@ -27,7 +28,10 @@ const loading = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => navigation.params,
-  useRouter: () => ({ push: navigation.push }),
+  useRouter: () => ({
+    push: navigation.push,
+    replace: navigation.replace,
+  }),
 }))
 vi.mock('@/components/providers/indexedDB', () => ({
   useIndexedDB: () => ({ dbReady: true, dbError: null }),
@@ -63,6 +67,7 @@ beforeEach(async () => {
   Element.prototype.scrollTo = vi.fn()
   navigation.params = new URLSearchParams()
   navigation.push.mockClear()
+  navigation.replace.mockClear()
   await db.events.clear()
   await db.tagEventOrder.clear()
   await db.tags.clear()
@@ -258,10 +263,12 @@ describe('Event dates', () => {
     })
     cleanup()
     navigation.push.mockClear()
+    navigation.replace.mockClear()
     render(<CreateOrUpdateEvent event={event} />)
     fireEvent.click(screen.getByRole('checkbox', { name: 'Add end date' }))
     fireEvent.click(screen.getByRole('button', { name: 'Update Event' }))
-    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/'))
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/'))
+    expect(navigation.push).not.toHaveBeenCalled()
     expect((await getEvent(event.id))?.endDate).toBeUndefined()
   })
 
@@ -376,7 +383,9 @@ it('saves, restores, and disables anniversary progress', async () => {
   expect(checkbox.getAttribute('aria-checked')).toBe('true')
   fireEvent.click(checkbox)
   navigation.push.mockClear()
+  navigation.replace.mockClear()
   fireEvent.submit(document.getElementById('event-form')!)
-  await waitFor(() => expect(navigation.push).toHaveBeenCalled())
+  await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/'))
+  expect(navigation.push).not.toHaveBeenCalled()
   expect((await getEvent(saved.id))?.anniversaryProgressEnabled).toBe(false)
 })

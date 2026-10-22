@@ -32,7 +32,12 @@ export const useEvent = () => {
         years,
       }
       await saveEvent(newEventData, parseTagNames(tags))
-      router.push('/')
+      // Replace the edit history entry so Back won't reopen the saved form.
+      if (id) {
+        router.replace('/')
+      } else {
+        router.push('/')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save event')
     } finally {
