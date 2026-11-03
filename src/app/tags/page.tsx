@@ -8,7 +8,7 @@ import { PATHS } from '@/constants/paths'
 
 export default function TagsPage() {
   return (
-    <div className="grid gap-4">
+    <div className="grid content-start gap-4">
       <Button asChild variant="outline" className="justify-self-start">
         <Link href={PATHS.HOME}>
           <ArrowLeft aria-hidden="true" />
