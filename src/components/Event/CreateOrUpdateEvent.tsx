@@ -95,7 +95,7 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
     <div className="grid content-start gap-4 pb-20">
       <div className="flex items-center justify-between">
         <Button asChild variant="outline">
-          <Link href={PATHS.HOME}>
+          <Link href={PATHS.HOME} replace>
             <ArrowLeft aria-hidden="true" />
             Back to events
           </Link>
