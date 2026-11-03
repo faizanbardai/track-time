@@ -1,7 +1,5 @@
 {
-  "cSpell.words": [
-    "Dexie"
-  ],
+  "cSpell.words": ["Dexie"],
   "chat.tools.terminal.autoApprove": {
     "/^npm exec -- tsc --noEmit$/": {
       "approve": true,
@@ -10,5 +8,6 @@
     "npx tsc": true,
     "npx eslint": true,
     "npx prettier": true
-  }
+  },
+  "js/ts.tsdk.path": "node_modules\\typescript\\lib"
 }
