@@ -26,7 +26,7 @@ serwist.registerCapture(
   async ({ request }: RouteHandlerCallbackOptions) => {
     try {
       const response = await fetch(request)
-      if (response.status >= 500) {
+      if (response.status >= 500 || (!self.navigator.onLine && !response.ok)) {
         const offlinePage = await serwist.matchPrecache('/~offline')
         if (offlinePage) return offlinePage
       }
