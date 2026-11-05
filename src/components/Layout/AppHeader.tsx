@@ -1,10 +1,10 @@
 'use client'
 
-import Link from 'next/link'
 import { CalendarClock, DatabaseBackup, Menu, Tags, X } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { PATHS } from '@/constants/paths'
 import { cn } from '@/lib/utils'
 import Container from '@/ui/Container/Container'
@@ -114,9 +114,12 @@ export const AppHeader = () => {
           >
             <Menu aria-hidden="true" />
           </Button>
-          <Link href={PATHS.HOME} className="font-semibold tracking-tight">
+          <OfflineAwareLink
+            href={PATHS.HOME}
+            className="font-semibold tracking-tight"
+          >
             {pageTitle}
-          </Link>
+          </OfflineAwareLink>
         </Container>
       </header>
 
@@ -169,7 +172,7 @@ export const AppHeader = () => {
               const Icon = item.icon
               const active = item.isActive(pathname)
               return (
-                <Link
+                <OfflineAwareLink
                   key={item.href}
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
@@ -181,7 +184,7 @@ export const AppHeader = () => {
                 >
                   <Icon aria-hidden="true" className="size-5" />
                   {item.label}
-                </Link>
+                </OfflineAwareLink>
               )
             })}
           </nav>

@@ -78,7 +78,15 @@ const ListEventsContent = () => {
     selectTag,
     handleDragEnd,
     canReorder,
+    error,
   } = useListEvents()
+  if (error) {
+    return (
+      <p role="alert" className="text-destructive">
+        {error}
+      </p>
+    )
+  }
   if (initialLoading) {
     return <div aria-busy="true" />
   }

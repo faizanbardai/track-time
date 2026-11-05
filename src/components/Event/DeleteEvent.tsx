@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useToast } from '@/components/providers/toast'
 import { useLoadingActions } from '@/components/providers/loading'
+import { navigateWithOfflineFallback } from '@/lib/offlineNavigation'
 
 interface DeleteEventProps {
   eventId: string
@@ -27,7 +28,7 @@ const DeleteEvent = ({ eventId, eventTitle }: DeleteEventProps) => {
     try {
       const snapshot = await deleteEvent(eventId)
       if (!snapshot) return
-      router.push('/')
+      navigateWithOfflineFallback('/', () => router.push('/'))
       showToast('Event deleted', {
         label: 'Undo',
         keepLoading: true,

@@ -2,6 +2,7 @@ import { ALL_TAG_ID } from '@/helpers/indexedDB'
 import { Tag } from '@/types/event'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
+import { isBrowserOffline } from '@/lib/offlineNavigation'
 
 const TAG_QUERY_PARAM = 'tag'
 const ACTIVE_TAG_STORAGE_KEY = 'track-time:active-tag-id'
@@ -12,6 +13,18 @@ export const useActiveTag = (tags: Tag[]) => {
   const searchParams = useSearchParams()
   const [activeTagId, setActiveTagId] = useState(ALL_TAG_ID)
   const [selectionReady, setSelectionReady] = useState(false)
+
+  const replaceUrl = useCallback(
+    (url: string) => {
+      if (isBrowserOffline()) {
+        window.history.replaceState(null, '', url)
+        return
+      }
+
+      router.replace(url, { scroll: false })
+    },
+    [router],
+  )
 
   useEffect(() => {
     if (tags.length === 0) return
@@ -36,17 +49,13 @@ export const useActiveTag = (tags: Tag[]) => {
       const nextSearchParams = new URLSearchParams(searchParams.toString())
       nextSearchParams.delete(TAG_QUERY_PARAM)
       const query = nextSearchParams.toString()
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      })
+      replaceUrl(query ? `${pathname}?${query}` : pathname)
     } else if (urlTagId === null && nextTagId !== ALL_TAG_ID) {
       const nextSearchParams = new URLSearchParams(searchParams.toString())
       nextSearchParams.set(TAG_QUERY_PARAM, nextTagId)
-      router.replace(`${pathname}?${nextSearchParams.toString()}`, {
-        scroll: false,
-      })
+      replaceUrl(`${pathname}?${nextSearchParams.toString()}`)
     }
-  }, [pathname, router, searchParams, tags])
+  }, [pathname, replaceUrl, searchParams, tags])
 
   const selectTag = useCallback(
     (tagId: string) => {
@@ -66,11 +75,9 @@ export const useActiveTag = (tags: Tag[]) => {
       }
 
       const query = nextSearchParams.toString()
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      })
+      replaceUrl(query ? `${pathname}?${query}` : pathname)
     },
-    [pathname, router, searchParams],
+    [pathname, replaceUrl, searchParams],
   )
 
   return {

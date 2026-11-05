@@ -18,7 +18,7 @@ import {
 } from '@/helpers/datetime/eventTiming'
 import { formatTagNames } from '@/helpers/indexedDB'
 import { TagPicker } from '@/components/Tag/TagPicker'
-import Link from 'next/link'
+import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { PATHS } from '@/constants/paths'
 import { ArrowLeft } from 'lucide-react'
 
@@ -95,10 +95,10 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
     <div className="grid content-start gap-4 pb-20">
       <div className="flex items-center justify-between">
         <Button asChild variant="outline">
-          <Link href={PATHS.HOME} replace>
+          <OfflineAwareLink href={PATHS.HOME} replace>
             <ArrowLeft aria-hidden="true" />
             Back to events
-          </Link>
+          </OfflineAwareLink>
         </Button>
         {event?.id && (
           <DeleteEvent eventId={event.id} eventTitle={event.title} />
@@ -325,7 +325,9 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
                       variant="link"
                       className="h-auto p-0"
                     >
-                      <Link href={PATHS.TAGS}>Manage tags</Link>
+                      <OfflineAwareLink href={PATHS.TAGS}>
+                        Manage tags
+                      </OfflineAwareLink>
                     </Button>
                   </div>
                   <Controller

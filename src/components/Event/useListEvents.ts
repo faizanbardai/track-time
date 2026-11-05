@@ -25,6 +25,7 @@ import { useActiveTag } from '@/components/Event/useActiveTag'
 import { useEventListClock } from '@/components/Event/EventListClock'
 import { filterUpcomingEvents } from '@/helpers/eventViews'
 import { useLoadingActions } from '@/components/providers/loading'
+import { navigateWithOfflineFallback } from '@/lib/offlineNavigation'
 
 const UPCOMING_TAG: Tag = {
   id: UPCOMING_TAG_ID,
@@ -42,7 +43,7 @@ const listEventsForTag = (tagId: string) => {
 
 export const useListEvents = () => {
   const router = useRouter()
-  const { dbReady } = useIndexedDB()
+  const { dbReady, dbError } = useIndexedDB()
   const { startLoading, stopLoading } = useLoadingActions()
   const now = useEventListClock()
 
@@ -67,6 +68,11 @@ export const useListEvents = () => {
       : loadedEvents
 
   useEffect(() => {
+    if (dbError) {
+      setError(`Local storage is unavailable: ${dbError}`)
+      setLoading(false)
+      return
+    }
     if (!dbReady) return
 
     startLoading()
@@ -83,7 +89,7 @@ export const useListEvents = () => {
         setLoading(false)
       })
       .finally(stopLoading)
-  }, [dbReady, startLoading, stopLoading])
+  }, [dbError, dbReady, startLoading, stopLoading])
 
   useEffect(() => {
     const refreshEvents = () => {
@@ -99,7 +105,7 @@ export const useListEvents = () => {
   }, [])
 
   useEffect(() => {
-    if (!dbReady || !selectionReady) return
+    if (!dbReady || !selectionReady || dbError) return
 
     let cancelled = false
     const activeIndex = tags.findIndex(({ id }) => id === activeTagId)
@@ -156,6 +162,7 @@ export const useListEvents = () => {
   }, [
     activeTagId,
     dbReady,
+    dbError,
     refreshVersion,
     selectionReady,
     startLoading,
@@ -171,7 +178,7 @@ export const useListEvents = () => {
       activeTagId === ALL_TAG_ID &&
       events.length === 0
     ) {
-      router.push(PATHS.EVENT)
+      navigateWithOfflineFallback(PATHS.EVENT, () => router.push(PATHS.EVENT))
     }
   }, [activeTagId, dbReady, events.length, loadedTagId, loading, router])
 
@@ -224,7 +231,7 @@ export const useListEvents = () => {
     activeTagId,
     events,
     eventsByTag,
-    initialLoading: loading && loadedTagId === null,
+    initialLoading: loading && loadedTagId === null && !dbError,
     tagLoading: loading && loadedTagId !== null,
     error,
     sensors,

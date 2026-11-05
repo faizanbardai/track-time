@@ -19,3 +19,9 @@ The application allows users to input a date and then displays a countdown timer
 - Existing timestamps remain timed events. Legacy single-date `progressEnabled` preferences enable anniversary progress unless explicitly overridden.
 
 Date-only values are stored as `YYYY-MM-DD`; timed values are stored as UTC timestamps with their selected timezone metadata. Events and tags are stored locally in IndexedDB.
+
+## Offline support
+
+After an online visit, the service worker caches the app shell and its route assets. Events and tags remain on the device in IndexedDB, so the app can list and edit existing local data offline. If an event detail route is not cached, the offline fallback loads that event from IndexedDB instead of requiring the network.
+
+A first-ever visit with no installed service worker or cached app assets requires a network connection, since the browser has no app shell to load. After the worker has installed, uncached navigations made offline use the cached offline page.
