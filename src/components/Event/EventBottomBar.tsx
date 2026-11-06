@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { Clock3, Plus } from 'lucide-react'
+import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { ALL_TAG_ID, UPCOMING_TAG_ID } from '@/helpers/indexedDB'
 import { Button } from '@/components/ui/button'
 import { PATHS } from '@/constants/paths'
@@ -104,9 +104,9 @@ export const EventBottomBar = ({
         aria-label="Add new entry"
         title="Add new entry"
       >
-        <Link href={newEventPath}>
+        <OfflineAwareLink href={newEventPath}>
           <Plus aria-hidden="true" className="size-6" />
-        </Link>
+        </OfflineAwareLink>
       </Button>
 
       <nav aria-label="Filter events by tag">

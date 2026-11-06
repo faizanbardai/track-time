@@ -131,7 +131,7 @@ const SortableTag = ({
 }
 
 export const ManageTags = () => {
-  const { dbReady } = useIndexedDB()
+  const { dbReady, dbError } = useIndexedDB()
   const { showToast } = useToast()
   const { startLoading, stopLoading } = useLoadingActions()
   const [tags, setTags] = useState<TagWithUsage[]>([])
@@ -168,10 +168,15 @@ export const ManageTags = () => {
   }, [])
 
   useEffect(() => {
+    if (dbError) {
+      setError(`Local storage is unavailable: ${dbError}`)
+      setLoading(false)
+      return
+    }
     if (!dbReady) return
     startLoading()
     void loadTags().finally(stopLoading)
-  }, [dbReady, loadTags, startLoading, stopLoading])
+  }, [dbError, dbReady, loadTags, startLoading, stopLoading])
 
   useEffect(() => {
     if (!editingId) return
@@ -266,7 +271,11 @@ export const ManageTags = () => {
           {savingId === 'new' ? 'Adding...' : 'Add tag'}
         </Button>
       </form>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading tags...</p>
       ) : tags.length === 0 ? (

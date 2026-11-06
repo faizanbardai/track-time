@@ -6,6 +6,11 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useToast } from '@/components/providers/toast'
 import { useLoadingActions } from '@/components/providers/loading'
+import {
+  isBrowserOffline,
+  navigateWithOfflineFallback,
+} from '@/lib/offlineNavigation'
+import { storePendingDeleteUndo } from '@/lib/pendingDeleteUndo'
 
 interface DeleteEventProps {
   eventId: string
@@ -27,19 +32,25 @@ const DeleteEvent = ({ eventId, eventTitle }: DeleteEventProps) => {
     try {
       const snapshot = await deleteEvent(eventId)
       if (!snapshot) return
-      router.push('/')
-      showToast('Event deleted', {
-        label: 'Undo',
-        keepLoading: true,
-        onClick: async () => {
-          try {
-            await restoreDeletedEvent(snapshot)
-            showToast('Event restored')
-          } catch {
-            showToast('Unable to restore event')
-          }
-        },
-      })
+      const offline = isBrowserOffline()
+      if (offline) {
+        storePendingDeleteUndo(snapshot, Date.now() + 30_000)
+      }
+      navigateWithOfflineFallback('/', () => router.push('/'))
+      if (!offline) {
+        showToast('Event deleted', {
+          label: 'Undo',
+          keepLoading: true,
+          onClick: async () => {
+            try {
+              await restoreDeletedEvent(snapshot)
+              showToast('Event restored')
+            } catch {
+              showToast('Unable to restore event')
+            }
+          },
+        })
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)

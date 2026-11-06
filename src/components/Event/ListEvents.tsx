@@ -78,6 +78,7 @@ const ListEventsContent = () => {
     selectTag,
     handleDragEnd,
     canReorder,
+    error,
   } = useListEvents()
   if (initialLoading) {
     return <div aria-busy="true" />
@@ -85,6 +86,11 @@ const ListEventsContent = () => {
 
   return (
     <div className="grid min-w-0 grid-rows-[1fr]" aria-busy={tagLoading}>
+      {error && (
+        <p role="alert" className="text-destructive">
+          {error}
+        </p>
+      )}
       <span className="sr-only" role="status" aria-live="polite">
         {tagLoading ? 'Loading events...' : ''}
       </span>

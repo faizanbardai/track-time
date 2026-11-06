@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { serializeEventDates } from '@/helpers/datetime/eventTiming'
 import { EventDraft, parseTagNames, saveEvent } from '@/helpers/indexedDB'
 import { useLoadingActions } from '@/components/providers/loading'
+import { navigateWithOfflineFallback } from '@/lib/offlineNavigation'
 
 export const useEvent = () => {
   const router = useRouter()
@@ -33,11 +34,13 @@ export const useEvent = () => {
       }
       await saveEvent(newEventData, parseTagNames(tags))
       // Replace the edit history entry so Back won't reopen the saved form.
-      if (id) {
-        router.replace('/')
-      } else {
-        router.push('/')
-      }
+      navigateWithOfflineFallback('/', () => {
+        if (id) {
+          router.replace('/')
+        } else {
+          router.push('/')
+        }
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save event')
     } finally {

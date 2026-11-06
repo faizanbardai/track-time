@@ -48,6 +48,10 @@ const EventCard = ({
 
   const handleClick = () => {
     cacheEvent(event)
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      window.location.assign(eventPath)
+      return
+    }
     router.push(eventPath)
   }
 

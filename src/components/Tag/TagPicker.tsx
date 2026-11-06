@@ -18,7 +18,7 @@ interface TagPickerProps {
 const serialize = (names: string[]) => names.join(', ')
 
 export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
-  const { dbReady } = useIndexedDB()
+  const { dbReady, dbError } = useIndexedDB()
   const { startLoading, stopLoading } = useLoadingActions()
   const [tags, setTags] = useState<Tag[]>([])
   const [query, setQuery] = useState('')
@@ -33,6 +33,11 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
   )
 
   useEffect(() => {
+    if (dbError) {
+      setError(`Local storage is unavailable: ${dbError}`)
+      setLoading(false)
+      return
+    }
     if (!dbReady) return
     setLoading(true)
     startLoading()
@@ -43,7 +48,7 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
       )
       .finally(() => setLoading(false))
       .finally(stopLoading)
-  }, [dbReady, startLoading, stopLoading])
+  }, [dbError, dbReady, startLoading, stopLoading])
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -184,7 +189,11 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
           </div>
         )}
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

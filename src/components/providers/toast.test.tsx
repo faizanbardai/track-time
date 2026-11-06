@@ -4,6 +4,14 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LoadingProvider, GlobalLoader } from './loading'
 import { ToastProvider, useToast } from './toast'
+import { storePendingDeleteUndo } from '@/lib/pendingDeleteUndo'
+import type { DeletedEventSnapshot } from '@/helpers/indexedDB'
+
+const restoreDeletedEventMock = vi.hoisted(() => vi.fn())
+
+vi.mock('@/helpers/indexedDB', () => ({
+  restoreDeletedEvent: restoreDeletedEventMock,
+}))
 
 const ToastTrigger = ({ keepLoading = false }: { keepLoading?: boolean }) => {
   const { showToast } = useToast()
@@ -48,6 +56,7 @@ describe('ToastProvider', () => {
 
   afterEach(() => {
     cleanup()
+    sessionStorage.clear()
     vi.useRealTimers()
   })
 
@@ -116,5 +125,37 @@ describe('ToastProvider', () => {
       resolveAction?.()
     })
     expect(isGlobalLoading()).toBe(false)
+  })
+
+  it('restores a pending offline delete after navigation', async () => {
+    const snapshot: DeletedEventSnapshot = {
+      event: {
+        id: 'event-1',
+        title: 'Event',
+        datetime: '2025-01-01',
+        seconds: true,
+        minutes: false,
+        hours: false,
+        days: false,
+        months: false,
+        years: false,
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
+      },
+      orders: [],
+    }
+    restoreDeletedEventMock.mockResolvedValue(undefined)
+    storePendingDeleteUndo(snapshot, Date.now() + 5000)
+
+    renderToast()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+      await Promise.resolve()
+    })
+    expect(restoreDeletedEventMock).toHaveBeenCalledWith(snapshot)
+    expect(screen.getByText('Event restored').textContent).toBe(
+      'Event restored',
+    )
   })
 })

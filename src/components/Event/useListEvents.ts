@@ -25,6 +25,7 @@ import { useActiveTag } from '@/components/Event/useActiveTag'
 import { useEventListClock } from '@/components/Event/EventListClock'
 import { filterUpcomingEvents } from '@/helpers/eventViews'
 import { useLoadingActions } from '@/components/providers/loading'
+import { navigateWithOfflineFallback } from '@/lib/offlineNavigation'
 
 const UPCOMING_TAG: Tag = {
   id: UPCOMING_TAG_ID,
@@ -42,7 +43,7 @@ const listEventsForTag = (tagId: string) => {
 
 export const useListEvents = () => {
   const router = useRouter()
-  const { dbReady } = useIndexedDB()
+  const { dbReady, dbError } = useIndexedDB()
   const { startLoading, stopLoading } = useLoadingActions()
   const now = useEventListClock()
 
@@ -67,23 +68,29 @@ export const useListEvents = () => {
       : loadedEvents
 
   useEffect(() => {
+    if (dbError) {
+      setError(`Local storage is unavailable: ${dbError}`)
+      setLoading(false)
+      return
+    }
     if (!dbReady) return
 
     startLoading()
     listTags()
-      .then((loadedTags) =>
+      .then((loadedTags) => {
         setTags([
           ...loadedTags.slice(0, 1),
           UPCOMING_TAG,
           ...loadedTags.slice(1),
-        ]),
-      )
+        ])
+        setError(null)
+      })
       .catch((err) => {
         setError(err.message)
         setLoading(false)
       })
       .finally(stopLoading)
-  }, [dbReady, startLoading, stopLoading])
+  }, [dbError, dbReady, startLoading, stopLoading])
 
   useEffect(() => {
     const refreshEvents = () => {
@@ -99,7 +106,7 @@ export const useListEvents = () => {
   }, [])
 
   useEffect(() => {
-    if (!dbReady || !selectionReady) return
+    if (!dbReady || !selectionReady || dbError) return
 
     let cancelled = false
     const activeIndex = tags.findIndex(({ id }) => id === activeTagId)
@@ -130,6 +137,7 @@ export const useListEvents = () => {
           if (cancelled) return
           cacheEvents(activeTagId, loadedEvents)
           setLoadedTagId(activeTagId)
+          setError(null)
         })
         .catch((err) => {
           if (!cancelled) setError(err.message)
@@ -145,8 +153,10 @@ export const useListEvents = () => {
         .then((loadedEvents) => {
           if (!cancelled) cacheEvents(tagId, loadedEvents)
         })
-        .catch((err) => {
-          if (!cancelled) setError(err.message)
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            console.error('Unable to preload events for an adjacent tag', err)
+          }
         })
     })
 
@@ -156,6 +166,7 @@ export const useListEvents = () => {
   }, [
     activeTagId,
     dbReady,
+    dbError,
     refreshVersion,
     selectionReady,
     startLoading,
@@ -171,7 +182,7 @@ export const useListEvents = () => {
       activeTagId === ALL_TAG_ID &&
       events.length === 0
     ) {
-      router.push(PATHS.EVENT)
+      navigateWithOfflineFallback(PATHS.EVENT, () => router.push(PATHS.EVENT))
     }
   }, [activeTagId, dbReady, events.length, loadedTagId, loading, router])
 
@@ -224,7 +235,7 @@ export const useListEvents = () => {
     activeTagId,
     events,
     eventsByTag,
-    initialLoading: loading && loadedTagId === null,
+    initialLoading: loading && loadedTagId === null && !dbError,
     tagLoading: loading && loadedTagId !== null,
     error,
     sensors,
