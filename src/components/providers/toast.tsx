@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useLoadingActions } from '@/components/providers/loading'
+import { restoreDeletedEvent } from '@/helpers/indexedDB'
+import { takePendingDeleteUndo } from '@/lib/pendingDeleteUndo'
 
 const DEFAULT_TOAST_DURATION = 5000
 
@@ -44,6 +46,37 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
     const timeout = window.setTimeout(() => setToast(null), toast.durationMs)
     return () => window.clearTimeout(timeout)
   }, [toast])
+
+  useEffect(() => {
+    const pending = takePendingDeleteUndo()
+    if (!pending) return
+
+    setToast({
+      message: 'Event deleted',
+      durationMs: Math.min(
+        DEFAULT_TOAST_DURATION,
+        pending.expiresAt - Date.now(),
+      ),
+      action: {
+        label: 'Undo',
+        keepLoading: true,
+        onClick: async () => {
+          try {
+            await restoreDeletedEvent(pending.snapshot)
+            setToast({
+              message: 'Event restored',
+              durationMs: DEFAULT_TOAST_DURATION,
+            })
+          } catch {
+            setToast({
+              message: 'Unable to restore event',
+              durationMs: DEFAULT_TOAST_DURATION,
+            })
+          }
+        },
+      },
+    })
+  }, [])
 
   const showToast = (
     message: string,

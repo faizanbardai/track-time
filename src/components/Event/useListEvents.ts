@@ -77,13 +77,14 @@ export const useListEvents = () => {
 
     startLoading()
     listTags()
-      .then((loadedTags) =>
+      .then((loadedTags) => {
         setTags([
           ...loadedTags.slice(0, 1),
           UPCOMING_TAG,
           ...loadedTags.slice(1),
-        ]),
-      )
+        ])
+        setError(null)
+      })
       .catch((err) => {
         setError(err.message)
         setLoading(false)
@@ -136,6 +137,7 @@ export const useListEvents = () => {
           if (cancelled) return
           cacheEvents(activeTagId, loadedEvents)
           setLoadedTagId(activeTagId)
+          setError(null)
         })
         .catch((err) => {
           if (!cancelled) setError(err.message)
@@ -151,8 +153,10 @@ export const useListEvents = () => {
         .then((loadedEvents) => {
           if (!cancelled) cacheEvents(tagId, loadedEvents)
         })
-        .catch((err) => {
-          if (!cancelled) setError(err.message)
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            console.error('Unable to preload events for an adjacent tag', err)
+          }
         })
     })
 
