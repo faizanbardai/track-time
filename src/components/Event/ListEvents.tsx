@@ -11,10 +11,12 @@ import {
 } from '@/components/Event/EventListClock'
 import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
+import { EmptyEvents } from '@/components/Event/EmptyEvents'
 import { SwipePager } from '@/components/ui/SwipePager'
-import { UPCOMING_TAG_ID } from '@/helpers/indexedDB'
+import { ALL_TAG_ID, UPCOMING_TAG_ID } from '@/helpers/indexedDB'
 import type { EventWithTags } from '@/types/event'
 import { filterUpcomingEvents } from '@/helpers/eventViews'
+import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { shouldRefreshSwipePreview } from './swipePreview'
 
@@ -83,9 +85,14 @@ const ListEventsContent = () => {
   if (initialLoading) {
     return <div aria-busy="true" />
   }
+  const isEmptyAllView =
+    activeTagId === ALL_TAG_ID && events.length === 0 && !error
 
   return (
-    <div className="grid min-w-0 grid-rows-[1fr]" aria-busy={tagLoading}>
+    <div
+      className={cn('grid min-w-0 grid-rows-[1fr]', !isEmptyAllView && 'pb-40')}
+      aria-busy={tagLoading}
+    >
       {error && (
         <p role="alert" className="text-destructive">
           {error}
@@ -107,6 +114,8 @@ const ListEventsContent = () => {
               activeTagId={tagId}
               isSettling={isSettling}
             />
+          ) : isEmptyAllView ? (
+            <EmptyEvents />
           ) : canReorder ? (
             <DndContext
               sensors={sensors}
@@ -124,13 +133,15 @@ const ListEventsContent = () => {
             <StaticEventList events={events} activeTagId={activeTagId} />
           )
         }
-        renderNavigation={(value, select) => (
-          <EventBottomBar
-            activeTagId={value}
-            tags={tags}
-            onSelectTag={select}
-          />
-        )}
+        renderNavigation={(value, select) =>
+          isEmptyAllView ? null : (
+            <EventBottomBar
+              activeTagId={value}
+              tags={tags}
+              onSelectTag={select}
+            />
+          )
+        }
       />
     </div>
   )
