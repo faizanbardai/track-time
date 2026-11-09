@@ -1,6 +1,14 @@
 'use client'
 
-import { CalendarClock, DatabaseBackup, Menu, Tags, X } from 'lucide-react'
+import {
+  CalendarClock,
+  Code2,
+  DatabaseBackup,
+  ExternalLink,
+  Menu,
+  Tags,
+  X,
+} from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -188,6 +196,21 @@ export const AppHeader = () => {
               )
             })}
           </nav>
+          <div className="mt-auto border-t p-3">
+            <a
+              href="https://github.com/faizanbardai/track-time"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Code2 aria-hidden="true" className="size-5" />
+              GitHub repository
+              <ExternalLink
+                aria-hidden="true"
+                className="ml-auto size-4 text-muted-foreground"
+              />
+            </a>
+          </div>
         </aside>
       </div>
     </>
