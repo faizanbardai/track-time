@@ -8,7 +8,6 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core'
 import {
-  ALL_TAG_ID,
   DATA_CHANGED_EVENT,
   listEventsByTag,
   listUpcomingEvents,
@@ -18,14 +17,11 @@ import {
 } from '../../helpers/indexedDB'
 import { EventWithTags, Tag } from '../../types/event'
 import { useIndexedDB } from '@/components/providers/indexedDB'
-import { useRouter } from 'next/navigation'
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { PATHS } from '@/constants/paths'
 import { useActiveTag } from '@/components/Event/useActiveTag'
 import { useEventListClock } from '@/components/Event/EventListClock'
 import { filterUpcomingEvents } from '@/helpers/eventViews'
 import { useLoadingActions } from '@/components/providers/loading'
-import { navigateWithOfflineFallback } from '@/lib/offlineNavigation'
 
 const UPCOMING_TAG: Tag = {
   id: UPCOMING_TAG_ID,
@@ -42,7 +38,6 @@ const listEventsForTag = (tagId: string) => {
 }
 
 export const useListEvents = () => {
-  const router = useRouter()
   const { dbReady, dbError } = useIndexedDB()
   const { startLoading, stopLoading } = useLoadingActions()
   const now = useEventListClock()
@@ -173,18 +168,6 @@ export const useListEvents = () => {
     stopLoading,
     tags,
   ])
-
-  useEffect(() => {
-    if (
-      dbReady &&
-      !loading &&
-      loadedTagId === activeTagId &&
-      activeTagId === ALL_TAG_ID &&
-      events.length === 0
-    ) {
-      navigateWithOfflineFallback(PATHS.EVENT, () => router.push(PATHS.EVENT))
-    }
-  }, [activeTagId, dbReady, events.length, loadedTagId, loading, router])
 
   const selectTag = (tagId: string) => {
     setLoading(!(tagId in eventsByTagRef.current))

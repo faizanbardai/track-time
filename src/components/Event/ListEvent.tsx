@@ -19,6 +19,7 @@ interface ListEventProps {
   liveCounter?: boolean
   draggable?: boolean
   activeTagId?: string
+  interactive?: boolean
 }
 
 const LiveListEvent = (props: EventPageCardProps) => {
@@ -36,6 +37,7 @@ const EventCard = ({
   now,
   draggable = false,
   activeTagId,
+  interactive = true,
 }: EventPageCardProps) => {
   const router = useRouter()
   const displayEventDatetime = formatEventCardDate(event)
@@ -65,11 +67,13 @@ const EventCard = ({
         'relative gap-0 overflow-hidden py-0 transition-colors hover:border-primary/30 hover:bg-accent',
         draggable
           ? 'cursor-grab select-none active:cursor-grabbing'
-          : 'cursor-pointer',
+          : interactive
+            ? 'cursor-pointer'
+            : 'hover:border-border hover:bg-card',
       )}
-      onClick={handleClick}
-      onMouseEnter={prefetchEvent}
-      onFocus={prefetchEvent}
+      onClick={interactive ? handleClick : undefined}
+      onMouseEnter={interactive ? prefetchEvent : undefined}
+      onFocus={interactive ? prefetchEvent : undefined}
     >
       <div className="grid min-w-0 gap-2 p-3 sm:gap-3 sm:p-4">
         <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
