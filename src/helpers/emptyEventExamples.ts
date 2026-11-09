@@ -56,15 +56,11 @@ const buildExampleEvent = (
       .startOf('day')
       .hour(example.endHour)
 
-    return createExampleEvent(
-      example,
-      startDate.toISOString(),
-      {
-        endDate: endDate.toISOString(),
-        dateOnly: false,
-        counterUnits: EMPTY_EVENT_LIVE_COUNTER_UNITS,
-      },
-    )
+    return createExampleEvent(example, startDate.toISOString(), {
+      endDate: endDate.toISOString(),
+      dateOnly: false,
+      counterUnits: EMPTY_EVENT_LIVE_COUNTER_UNITS,
+    })
   }
 
   const endDate = today
@@ -76,14 +72,10 @@ const buildExampleEvent = (
     .subtract(example.durationYears, 'years')
     .add(1, 'day')
 
-  return createExampleEvent(
-    example,
-    startDate.format('YYYY-MM-DD'),
-    {
-      endDate: endDate.format('YYYY-MM-DD'),
-      anniversaryProgressEnabled: true,
-    },
-  )
+  return createExampleEvent(example, startDate.format('YYYY-MM-DD'), {
+    endDate: endDate.format('YYYY-MM-DD'),
+    anniversaryProgressEnabled: true,
+  })
 }
 
 export const getEmptyEventExamples = (today: string) => {
