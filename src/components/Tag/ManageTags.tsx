@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Check, GripVertical, X } from 'lucide-react'
+import { Check, Info, X } from 'lucide-react'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -105,6 +105,9 @@ const SortableTag = ({
           {tag.name}
         </button>
       )}
+      <span className="w-20 shrink-0 text-right text-xs font-normal tabular-nums text-muted-foreground">
+        {tag.eventCount} {tag.eventCount === 1 ? 'event' : 'events'}
+      </span>
       <Button
         type="button"
         variant="ghost"
@@ -122,10 +125,6 @@ const SortableTag = ({
       >
         {editing ? <Check aria-hidden="true" /> : <X aria-hidden="true" />}
       </Button>
-      <GripVertical
-        aria-hidden="true"
-        className="size-4 text-muted-foreground"
-      />
     </div>
   )
 }
@@ -259,7 +258,7 @@ export const ManageTags = () => {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4">
       <form onSubmit={handleCreate} className="flex gap-2">
         <Input
           value={newName}
@@ -290,29 +289,35 @@ export const ManageTags = () => {
             items={tags.map((tag) => tag.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div ref={listRef} className="grid gap-2">
-              {tags.map((tag) => (
-                <SortableTag
-                  key={tag.id}
-                  tag={tag}
-                  editing={editingId === tag.id}
-                  value={names[tag.id] ?? ''}
-                  busy={savingId === tag.id}
-                  onChange={(value) =>
-                    setNames((current) => ({ ...current, [tag.id]: value }))
-                  }
-                  onEdit={() => setEditingId(tag.id)}
-                  onSave={() => void handleRename(tag)}
-                  onCancel={() => {
-                    setNames((current) => ({
-                      ...current,
-                      [tag.id]: tag.name,
-                    }))
-                    setEditingId(null)
-                  }}
-                  onDelete={() => setTagToDelete(tag)}
-                />
-              ))}
+            <div className="grid gap-2">
+              <p className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
+                <Info aria-hidden="true" className="size-4 shrink-0" />
+                <span>Drag tags to change their order.</span>
+              </p>
+              <div ref={listRef} className="grid gap-2">
+                {tags.map((tag) => (
+                  <SortableTag
+                    key={tag.id}
+                    tag={tag}
+                    editing={editingId === tag.id}
+                    value={names[tag.id] ?? ''}
+                    busy={savingId === tag.id}
+                    onChange={(value) =>
+                      setNames((current) => ({ ...current, [tag.id]: value }))
+                    }
+                    onEdit={() => setEditingId(tag.id)}
+                    onSave={() => void handleRename(tag)}
+                    onCancel={() => {
+                      setNames((current) => ({
+                        ...current,
+                        [tag.id]: tag.name,
+                      }))
+                      setEditingId(null)
+                    }}
+                    onDelete={() => setTagToDelete(tag)}
+                  />
+                ))}
+              </div>
             </div>
           </SortableContext>
         </DndContext>
