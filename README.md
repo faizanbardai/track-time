@@ -6,8 +6,8 @@ Track Time is a personal time-tracking app for dates you care about. Create an e
 
 ## Screenshots
 
-| Event list · light mode | Event list · dark mode |
-| --- | --- |
+| Event list · light mode                                                               | Event list · dark mode                                                                    |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | <img src="doc/screenshots/event-list.png" alt="Event list in light mode" width="360"> | <img src="doc/screenshots/event-list-dark.png" alt="Event list in dark mode" width="360"> |
 
 **Time zone event · light mode**

@@ -388,9 +388,7 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
         </form>
       </Card>
       <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div
-          className="mx-auto flex w-full max-w-[1200px] items-center gap-2 px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-        >
+        <div className="mx-auto flex w-full max-w-[1200px] items-center gap-2 px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {event?.id && (
             <DeleteEvent eventId={event.id} eventTitle={event.title} />
           )}

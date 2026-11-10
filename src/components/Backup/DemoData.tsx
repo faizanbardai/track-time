@@ -54,7 +54,9 @@ export const DemoData = () => {
       }
     } catch (reason) {
       setError(
-        reason instanceof Error ? reason.message : 'Unable to update demo data.',
+        reason instanceof Error
+          ? reason.message
+          : 'Unable to update demo data.',
       )
     } finally {
       setBusy(false)
