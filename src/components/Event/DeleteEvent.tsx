@@ -65,20 +65,25 @@ const DeleteEvent = ({ eventId, eventTitle }: DeleteEventProps) => {
   }
 
   return (
-    <div className="flex flex-col items-end">
+    <div className="flex flex-col items-center">
       <Button
         type="button"
-        variant="ghost"
-        size="icon"
+        variant="outline"
+        size="default"
         aria-label="Delete event"
         title="Delete event"
-        className="text-muted-foreground hover:text-destructive focus-visible:text-destructive"
+        className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={() => setDialogOpen(true)}
         disabled={loading}
       >
         <Trash2 aria-hidden="true" />
+        Delete
       </Button>
-      {error && <span className="mt-1 text-xs text-destructive">{error}</span>}
+      {error && (
+        <span role="alert" className="mt-1 text-xs text-destructive">
+          {error}
+        </span>
+      )}
       <AlertDialog
         open={dialogOpen}
         title={`Delete “${eventTitle}”?`}

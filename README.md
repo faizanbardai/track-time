@@ -1,27 +1,61 @@
-# track-time
+# Track Time
 
-track time
+**Keep the moments that matter in view.**
 
-Front end: Next.js
+Track Time is a personal time-tracking app for dates you care about. Create an event to see a live countdown, how long ago something happened, or your progress through a date range. It is a hobby project built to explore thoughtful date handling, offline web apps, and keeping personal data in the browser.
 
-A SPA (Single Page Application) that shows time left or time since a specific date.
+## Screenshots
 
-The application allows users to input a date and then displays a countdown timer or a count-up timer, depending on whether the date is in the future or the past. The data is saved locally in the browser's IndexedDB.
+| Event list · light mode | Event list · dark mode |
+| --- | --- |
+| <img src="doc/screenshots/event-list.png" alt="Event list in light mode" width="360"> | <img src="doc/screenshots/event-list-dark.png" alt="Event list in dark mode" width="360"> |
 
-## Event dates and progress
+**Time zone event · light mode**
 
-- A single date counts down before the date and shows time since afterward.
-- Enable **Include time** for precise times. Start and end can use different IANA timezones (for example, `Europe/Berlin`).
-- **Add end date** creates an interval: countdown to start, time remaining while ongoing, and time since completion afterward. The total duration remains beneath the dates.
-- Date-only ranges include both dates. August 10–16 is seven calendar days; the event finishes at the start of August 17 in the viewer's local timezone.
-- Progress appears automatically during an interval and measures elapsed time between its start and end. Display units only control the counter's formatting.
-- Enable **Show progress to next anniversary** for annual progress from a single date or, after an interval finishes, its selected end date. The bar resets each anniversary; February 29 uses February 28 in non-leap years. Timed anniversaries use the saved endpoint timezone.
-- Existing timestamps remain timed events. Legacy single-date `progressEnabled` preferences enable anniversary progress unless explicitly overridden.
+<img src="doc/screenshots/time-zone-event.png" alt="Timed event form showing separate start and end time zones" width="360" />
 
-Date-only values are stored as `YYYY-MM-DD`; timed values are stored as UTC timestamps with their selected timezone metadata. Events and tags are stored locally in IndexedDB.
+## What it can do
 
-## Offline support
+- Track a date as a countdown before it happens and elapsed time afterward.
+- Add a start and end date to follow an event through its full duration.
+- Use precise times and IANA time zones, including different zones for each endpoint.
+- See progress through an active date range or toward the next annual anniversary.
+- Organize events with tags and choose which time units appear in counters.
+- Load and remove a sample set from **Backup & restore** for a quick walkthrough, without affecting personal events.
+- Keep events and tags in browser storage, use the app offline after the first online visit, and export or restore an encrypted backup.
 
-After an online visit, the service worker caches the app shell and its route assets. Events and tags remain on the device in IndexedDB, so the app can list and edit existing local data offline. If an event detail route is not cached, the offline fallback loads that event from IndexedDB instead of requiring the network.
+## A few details I cared about
 
-A first-ever visit with no installed service worker or cached app assets requires a network connection, since the browser has no app shell to load. After the worker has installed, uncached navigations made offline use the cached offline page.
+Date-only events and timed events behave differently, so the app stores date-only values as calendar dates and timed values as UTC timestamps with their selected time zone. Date-only ranges include both dates; for example, August 10–16 lasts seven calendar days and ends at the start of August 17 in the viewer's local time.
+
+Annual progress follows the event's selected endpoint and resets each anniversary. February 29 anniversaries fall on February 28 in non-leap years. For timed events, the anniversary uses the saved endpoint time zone.
+
+The app uses a service worker to cache the shell and route assets for later offline visits. Event data stays in IndexedDB on the device. Backups can be downloaded as encrypted JSON and restored on another browser or device with the backup password.
+
+## Run locally
+
+You'll need Node.js and npm installed.
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser. To create a production build, run:
+
+```bash
+npm run build
+npm run start
+```
+
+## Built with
+
+Next.js, React, TypeScript, Tailwind CSS, and Dexie for IndexedDB. The app is installable as a progressive web app and uses Serwist for service-worker support.
+
+## For reviewers
+
+This project includes focused tests for date calculations, event progress, backup and restore, offline navigation, and key UI interactions. Run them with:
+
+```bash
+npm test
+```

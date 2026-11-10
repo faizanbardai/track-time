@@ -6,7 +6,7 @@ import { BottomBar } from './BottomBar'
 export const BottomPill = ({ className, ...props }: ComponentProps<'div'>) => (
   <div
     className={cn(
-      'flex h-14 items-center overflow-hidden rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/85',
+      'flex h-14 items-center overflow-hidden rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80',
       className,
     )}
     {...props}

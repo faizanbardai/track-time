@@ -92,18 +92,17 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
   const { onSubmit, error } = useEvent()
 
   return (
-    <div className="grid content-start gap-4 pb-20">
-      <div className="flex items-center justify-between">
-        <Button asChild variant="outline">
-          <OfflineAwareLink href={PATHS.HOME} replace>
-            <ArrowLeft aria-hidden="true" />
-            Back to events
-          </OfflineAwareLink>
-        </Button>
-        {event?.id && (
-          <DeleteEvent eventId={event.id} eventTitle={event.title} />
-        )}
-      </div>
+    <div className="grid content-start gap-4 pb-24">
+      {!event?.id && (
+        <div className="flex items-center">
+          <Button asChild variant="outline">
+            <OfflineAwareLink href={PATHS.HOME} replace>
+              <ArrowLeft aria-hidden="true" />
+              Back to events
+            </OfflineAwareLink>
+          </Button>
+        </div>
+      )}
       <Card className="gap-4 py-4">
         <form id="event-form" onSubmit={handleSubmit(onSubmit)}>
           <CardContent>
@@ -141,47 +140,6 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
                 />
                 Include time
               </label>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label htmlFor="date">{hasEnd ? 'Start date' : 'Date'}</Label>
-                  <Input {...register('date')} id="date" type="date" required />
-                </div>
-                {!dateOnly && (
-                  <>
-                    <div className="grid gap-2">
-                      <Label htmlFor="time">Start time</Label>
-                      <Input
-                        {...register('time')}
-                        id="time"
-                        type="time"
-                        required
-                      />
-                    </div>
-                    <div className="grid gap-2 md:col-span-2">
-                      <Label htmlFor="timeZone">Start timezone</Label>
-                      <Controller
-                        name="timeZone"
-                        control={control}
-                        render={({ field }) => (
-                          <TimeZonePicker
-                            id="timeZone"
-                            value={field.value}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            date={startDate}
-                            time={startTime}
-                          />
-                        )}
-                      />
-                      {formState.errors.timeZone && (
-                        <p role="alert" className="text-sm text-destructive">
-                          {formState.errors.timeZone.message}
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
               <label className="flex items-center gap-2">
                 <Controller
                   name="hasEnd"
@@ -195,8 +153,18 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
                 />
                 Add end date
               </label>
-              {hasEnd && (
-                <div className="grid gap-3 md:grid-cols-2">
+              <div
+                className={`grid gap-3 ${
+                  hasEnd
+                    ? 'grid-cols-1 min-[360px]:grid-cols-2'
+                    : 'md:grid-cols-2'
+                }`}
+              >
+                <div className="grid gap-2">
+                  <Label htmlFor="date">{hasEnd ? 'Start date' : 'Date'}</Label>
+                  <Input {...register('date')} id="date" type="date" required />
+                </div>
+                {hasEnd && (
                   <div className="grid gap-2">
                     <Label htmlFor="endDate">End date</Label>
                     <Input
@@ -234,8 +202,19 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
                       required
                     />
                   </div>
-                  {!dateOnly && (
-                    <>
+                )}
+                {!dateOnly && (
+                  <>
+                    <div className="grid gap-2">
+                      <Label htmlFor="time">Start time</Label>
+                      <Input
+                        {...register('time')}
+                        id="time"
+                        type="time"
+                        required
+                      />
+                    </div>
+                    {hasEnd && (
                       <div className="grid gap-2">
                         <Label htmlFor="endTime">End time</Label>
                         <Input
@@ -245,51 +224,79 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
                           required
                         />
                       </div>
-                      <label className="flex items-center gap-2 md:col-span-2">
-                        <Checkbox
-                          checked={differentEndZone}
-                          onCheckedChange={(checked) =>
-                            setDifferentEndZone(checked === true)
-                          }
-                        />
-                        End uses a different timezone
-                      </label>
-                      {differentEndZone && (
-                        <div className="grid gap-2 md:col-span-2">
-                          <Label htmlFor="endTimeZone">End timezone</Label>
-                          <Controller
-                            name="endTimeZone"
-                            control={control}
-                            render={({ field }) => (
-                              <TimeZonePicker
-                                id="endTimeZone"
-                                value={field.value}
-                                onChange={field.onChange}
-                                onBlur={field.onBlur}
-                                date={endDate || startDate}
-                                time={endTime}
-                              />
-                            )}
+                    )}
+                    <div className="col-span-full grid gap-2">
+                      <Label htmlFor="timeZone">Start timezone</Label>
+                      <Controller
+                        name="timeZone"
+                        control={control}
+                        render={({ field }) => (
+                          <TimeZonePicker
+                            id="timeZone"
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            date={startDate}
+                            time={startTime}
                           />
-                        </div>
+                        )}
+                      />
+                      {formState.errors.timeZone && (
+                        <p role="alert" className="text-sm text-destructive">
+                          {formState.errors.timeZone.message}
+                        </p>
                       )}
-                    </>
-                  )}
-                  {formState.errors.endDate && (
-                    <p
-                      role="alert"
-                      className="col-span-full text-sm text-destructive"
-                    >
-                      {formState.errors.endDate.message}
-                    </p>
-                  )}
+                    </div>
+                    {hasEnd && (
+                      <>
+                        <label className="col-span-full flex items-center gap-2">
+                          <Checkbox
+                            checked={differentEndZone}
+                            onCheckedChange={(checked) =>
+                              setDifferentEndZone(checked === true)
+                            }
+                          />
+                          End uses a different timezone
+                        </label>
+                        {differentEndZone && (
+                          <div className="col-span-full grid gap-2">
+                            <Label htmlFor="endTimeZone">End timezone</Label>
+                            <Controller
+                              name="endTimeZone"
+                              control={control}
+                              render={({ field }) => (
+                                <TimeZonePicker
+                                  id="endTimeZone"
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  onBlur={field.onBlur}
+                                  date={endDate || startDate}
+                                  time={endTime}
+                                />
+                              )}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+                {hasEnd && formState.errors.endDate && (
+                  <p
+                    role="alert"
+                    className="col-span-full text-sm text-destructive"
+                  >
+                    {formState.errors.endDate.message}
+                  </p>
+                )}
+                {hasEnd && (
                   <p className="col-span-full text-sm text-muted-foreground">
                     {dateOnly
                       ? 'Both dates are included. Progress appears while the event is ongoing.'
                       : 'Progress follows the time between start and end.'}
                   </p>
-                </div>
-              )}
+                )}
+              </div>
               <div className="grid gap-2">
                 <div className="flex items-center gap-2">
                   <Controller
@@ -381,10 +388,24 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
         </form>
       </Card>
       <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex w-full max-w-[1200px] justify-end gap-2 px-2 py-3">
-          <Button type="submit" form="event-form">
-            {event?.id ? 'Update Event' : 'Create Event'}
-          </Button>
+        <div
+          className="mx-auto flex w-full max-w-[1200px] items-center gap-2 px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        >
+          {event?.id && (
+            <DeleteEvent eventId={event.id} eventTitle={event.title} />
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            {event?.id && (
+              <Button asChild variant="outline">
+                <OfflineAwareLink href={PATHS.HOME} replace>
+                  Cancel
+                </OfflineAwareLink>
+              </Button>
+            )}
+            <Button type="submit" form="event-form">
+              {event?.id ? 'Update' : 'Create Event'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
