@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { memo } from 'react'
 import { cacheEvent } from '@/helpers/indexedDB'
+import { useSettings } from '@/components/providers/settings'
 
 interface ListEventProps {
   event: EventWithTags
@@ -40,7 +41,8 @@ const EventCard = ({
   interactive = true,
 }: EventPageCardProps) => {
   const router = useRouter()
-  const displayEventDatetime = formatEventCardDate(event)
+  const { timeFormat } = useSettings()
+  const displayEventDatetime = formatEventCardDate(event, undefined, timeFormat)
   const displayDuration = getEventDurationLabel(event)
   const displayTags = event.tags.filter(
     (tag) => !tag.system && tag.id !== activeTagId,

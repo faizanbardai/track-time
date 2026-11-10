@@ -7,6 +7,7 @@ import { IndexedDBProvider } from '@/components/providers/indexedDB'
 import { AppHeader } from '@/components/Layout/AppHeader'
 import { ToastProvider } from '@/components/providers/toast'
 import { GlobalLoader, LoadingProvider } from '@/components/providers/loading'
+import { SettingsProvider } from '@/components/providers/settings'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -71,15 +72,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LoadingProvider>
-            <IndexedDBProvider>
-              <ToastProvider>
-                <div className="grid min-h-dvh grid-rows-[auto_auto_1fr]">
-                  <AppHeader />
-                  <GlobalLoader />
-                  <Container className="grid min-w-0">{children}</Container>
-                </div>
-              </ToastProvider>
-            </IndexedDBProvider>
+            <SettingsProvider>
+              <IndexedDBProvider>
+                <ToastProvider>
+                  <div className="grid min-h-dvh grid-rows-[auto_auto_1fr]">
+                    <AppHeader />
+                    <GlobalLoader />
+                    <Container className="grid min-w-0">{children}</Container>
+                  </div>
+                </ToastProvider>
+              </IndexedDBProvider>
+            </SettingsProvider>
           </LoadingProvider>
         </ThemeProvider>
       </body>
