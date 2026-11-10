@@ -6,11 +6,14 @@ import {
   DatabaseBackup,
   ExternalLink,
   Menu,
+  Settings2,
   Tags,
   X,
 } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { useTheme } from 'next-themes'
+import { useSettings } from '@/components/providers/settings'
 import { Button } from '@/components/ui/button'
 import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { PATHS } from '@/constants/paths'
@@ -54,6 +57,8 @@ export const AppHeader = () => {
             ? 'Edit event'
             : 'Track Time'
   const [open, setOpen] = useState(false)
+  const { theme, setTheme } = useTheme()
+  const { timeFormat, setTimeFormat } = useSettings()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const drawerRef = useRef<HTMLElement>(null)
 
@@ -68,7 +73,7 @@ export const AppHeader = () => {
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled])',
+      'a[href], button:not([disabled]), select:not([disabled]), input:not([disabled])',
     )
     focusable?.[0]?.focus()
 
@@ -82,7 +87,7 @@ export const AppHeader = () => {
 
       const items = Array.from(
         drawerRef.current.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled])',
+          'a[href], button:not([disabled]), select:not([disabled]), input:not([disabled])',
         ),
       )
       const first = items[0]
@@ -157,7 +162,7 @@ export const AppHeader = () => {
           aria-modal="true"
           aria-labelledby="navigation-title"
           className={cn(
-            'relative flex h-full w-[min(20rem,85vw)] flex-col border-r bg-background shadow-xl will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+            'relative flex h-full w-[min(20rem,85vw)] flex-col overflow-y-auto border-r bg-background shadow-xl will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
             open ? 'translate-x-0' : '-translate-x-full',
           )}
         >
@@ -196,6 +201,67 @@ export const AppHeader = () => {
               )
             })}
           </nav>
+          <section aria-labelledby="settings-title" className="border-t p-4">
+            <h3
+              id="settings-title"
+              className="mb-3 flex items-center gap-2 text-sm font-semibold"
+            >
+              <Settings2 aria-hidden="true" className="size-4" />
+              Settings
+            </h3>
+            <div className="grid gap-3">
+              <fieldset className="grid gap-1.5">
+                <legend className="text-xs font-medium text-muted-foreground">
+                  Time format
+                </legend>
+                <div className="grid grid-cols-2 gap-1 rounded-lg border bg-muted/50 p-1">
+                  {(['12h', '24h'] as const).map((format) => (
+                    <label
+                      key={format}
+                      className="cursor-pointer rounded-md text-center text-sm font-medium has-[:checked]:bg-background has-[:checked]:text-foreground has-[:checked]:shadow-sm"
+                    >
+                      <input
+                        type="radio"
+                        name="time-format"
+                        value={format}
+                        checked={timeFormat === format}
+                        onChange={() => setTimeFormat(format)}
+                        className="peer sr-only"
+                      />
+                      <span className="block rounded-md px-3 py-1.5 text-muted-foreground peer-checked:text-foreground peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-ring">
+                        {format}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className="grid gap-1.5">
+                <legend className="text-xs font-medium text-muted-foreground">
+                  Theme
+                </legend>
+                <div className="grid grid-cols-3 gap-1 rounded-lg border bg-muted/50 p-1">
+                  {(['light', 'dark', 'system'] as const).map((option) => (
+                    <label
+                      key={option}
+                      className="cursor-pointer rounded-md text-center text-sm font-medium capitalize has-[:checked]:bg-background has-[:checked]:text-foreground has-[:checked]:shadow-sm"
+                    >
+                      <input
+                        type="radio"
+                        name="app-theme"
+                        value={option}
+                        checked={(theme ?? 'system') === option}
+                        onChange={() => setTheme(option)}
+                        className="peer sr-only"
+                      />
+                      <span className="block rounded-md px-2 py-1.5 text-muted-foreground peer-checked:text-foreground peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-ring">
+                        {option}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
+          </section>
           <div className="mt-auto border-t p-3">
             <a
               href="https://github.com/faizanbardai/track-time"

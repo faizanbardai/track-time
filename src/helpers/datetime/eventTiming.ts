@@ -3,6 +3,7 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import type { Event, EventFormData } from '@/types/event'
 import { calculateDuration } from './calculateTimeDiff'
+import type { TimeFormat } from '@/components/providers/settings'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -148,13 +149,18 @@ export const formatEventDate = (
   event: Event,
   end = false,
   zoneLabel?: string,
+  timeFormat: TimeFormat = '24h',
 ) => {
   const value = end ? event.endDate! : event.datetime
   const zone = end ? event.endTimeZone : event.timeZone
   const date = zone && !event.dateOnly ? dayjs(value).tz(zone) : dayjs(value)
   const showTime = !event.dateOnly && (date.hour() !== 0 || date.minute() !== 0)
   return (
-    date.format(showTime ? 'DD MMM YYYY HH:mm' : 'DD MMM YYYY') +
+    date.format(
+      showTime
+        ? `DD MMM YYYY ${timeFormat === '12h' ? 'h:mm A' : 'HH:mm'}`
+        : 'DD MMM YYYY',
+    ) +
     (zone && !event.dateOnly && zoneLabel !== ''
       ? ` (${zoneLabel ?? zone})`
       : '')
@@ -164,6 +170,7 @@ export const formatEventDate = (
 export const formatEventCardDate = (
   event: Event,
   userZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+  timeFormat: TimeFormat = '24h',
 ) => {
   const canonicalZone = (zone: string) =>
     new Intl.DateTimeFormat('en', { timeZone: zone }).resolvedOptions().timeZone
@@ -180,8 +187,10 @@ export const formatEventCardDate = (
   const endLabel = differentZones || endZone !== localZone ? label(endZone) : ''
 
   return (
-    formatEventDate(event, false, startLabel) +
-    (event.endDate ? ` – ${formatEventDate(event, true, endLabel)}` : '')
+    formatEventDate(event, false, startLabel, timeFormat) +
+    (event.endDate
+      ? ` – ${formatEventDate(event, true, endLabel, timeFormat)}`
+      : '')
   )
 }
 
