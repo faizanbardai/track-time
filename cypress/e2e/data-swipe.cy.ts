@@ -27,8 +27,11 @@ describe('Backup and restore pager', () => {
   })
 
   it('fits the viewport, keeps a gap during swipes, and settles at the viewport edge', () => {
-    cy.document().then((doc) => {
-      expect(doc.documentElement.scrollHeight).to.be.at.most(844)
+    cy.get('[data-testid="backup-swipe-surface"]').should(($surface) => {
+      const bounds = $surface[0].getBoundingClientRect()
+      const viewportWidth = $surface[0].ownerDocument.documentElement.clientWidth
+      expect(bounds.left).to.be.at.least(0)
+      expect(bounds.right).to.be.at.most(viewportWidth)
     })
     cy.get('[data-testid="backup-swipe-surface"]').then(($surface) => {
       const surface = $surface[0]
