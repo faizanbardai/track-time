@@ -7,6 +7,13 @@ import { calculateDuration } from './calculateTimeDiff'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
+export type EventStatus =
+  | 'upcoming'
+  | 'ongoing'
+  | 'completed'
+  | 'today'
+  | 'past'
+
 export const isValidTimeZone = (zone: string) => {
   try {
     new Intl.DateTimeFormat('en', { timeZone: zone }).format()
@@ -87,7 +94,7 @@ export const getEventBounds = (event: Event) => ({
     : null,
 })
 
-export const getEventStatus = (event: Event, now: Dayjs) => {
+export const getEventStatus = (event: Event, now: Dayjs): EventStatus => {
   const { start, end } = getEventBounds(event)
   if (now.isBefore(start)) return 'upcoming'
   if (end) return now.isBefore(end) ? 'ongoing' : 'completed'

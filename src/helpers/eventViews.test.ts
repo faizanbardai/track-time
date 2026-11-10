@@ -38,4 +38,35 @@ describe('filterUpcomingEvents', () => {
 
     expect(filterUpcomingEvents(events, now)).toHaveLength(0)
   })
+
+  it('includes ongoing date-only events through their final day', () => {
+    const events = [
+      {
+        ...createEvent('ongoing', '2026-06-24'),
+        dateOnly: true,
+        endDate: '2028-06-23',
+      },
+      {
+        ...createEvent('completed', '2026-06-24'),
+        dateOnly: true,
+        endDate: '2026-06-24',
+      },
+    ]
+
+    expect(
+      filterUpcomingEvents(events, dayjs('2026-06-25T12:00:00')).map(
+        ({ id }) => id,
+      ),
+    ).toEqual(['ongoing'])
+    expect(
+      filterUpcomingEvents(events, dayjs('2028-06-23T12:00:00')).map(
+        ({ id }) => id,
+      ),
+    ).toEqual(['ongoing'])
+    expect(
+      filterUpcomingEvents(events, dayjs('2028-06-24T00:00:00')).map(
+        ({ id }) => id,
+      ),
+    ).toEqual([])
+  })
 })

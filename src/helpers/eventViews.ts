@@ -1,10 +1,16 @@
 import dayjs, { type Dayjs } from 'dayjs'
-import type { EventWithTags } from '@/types/event'
+import type { Event, EventWithTags } from '@/types/event'
 
-export const filterUpcomingEvents = (events: EventWithTags[], now: Dayjs) => {
+export const isUpcomingOrOngoingEvent = (event: Event, now: Dayjs) => {
   const nowTimestamp = now.valueOf()
+  if (dayjs(event.datetime).valueOf() > nowTimestamp) return true
+  if (!event.endDate) return false
 
-  return events.filter(
-    (event) => dayjs(event.datetime).valueOf() > nowTimestamp,
-  )
+  // Date-only end dates include the whole final day.
+  const end = dayjs(event.endDate)
+  const endExclusive = event.dateOnly ? end.add(1, 'day').startOf('day') : end
+  return endExclusive.valueOf() > nowTimestamp
 }
+
+export const filterUpcomingEvents = (events: EventWithTags[], now: Dayjs) =>
+  events.filter((event) => isUpcomingOrOngoingEvent(event, now))
