@@ -266,7 +266,7 @@ describe('Event dates', () => {
     navigation.replace.mockClear()
     render(<CreateOrUpdateEvent event={event} />)
     fireEvent.click(screen.getByRole('checkbox', { name: 'Add end date' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Update Event' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Update' }))
     await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/'))
     expect(navigation.push).not.toHaveBeenCalled()
     expect((await getEvent(event.id))?.endDate).toBeUndefined()
