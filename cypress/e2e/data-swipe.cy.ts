@@ -2,12 +2,13 @@ const sendTouch = (
   element: HTMLElement,
   type: 'touchstart' | 'touchmove' | 'touchend',
   x: number,
+  y: number,
 ) => {
   const touch = new Touch({
     identifier: 0,
     target: element,
     clientX: x,
-    clientY: element.getBoundingClientRect().top + 20,
+    clientY: y,
   })
   element.dispatchEvent(
     new TouchEvent(type, {
@@ -34,21 +35,24 @@ describe('Backup and restore pager', () => {
       expect(bounds.left).to.be.at.least(0)
       expect(bounds.right).to.be.at.most(viewportWidth)
     })
+    let startY = 0
     cy.get('[data-testid="backup-swipe-surface"]').then(($surface) => {
-      const surface = $surface[0]
-      sendTouch(surface, 'touchstart', 300)
-      sendTouch(surface, 'touchmove', 160)
-    })
-    cy.get('#data-backup-panel').then(($backup) => {
-      cy.get('#data-restore-panel').then(($restore) => {
-        const gap =
-          $restore[0].getBoundingClientRect().left -
-          $backup[0].getBoundingClientRect().right
-        expect(gap).to.be.closeTo(12, 0.1)
-      })
+      const bounds = $surface[0].getBoundingClientRect()
+      startY = bounds.top + 20
+      sendTouch($surface[0], 'touchstart', 300, startY)
     })
     cy.get('[data-testid="backup-swipe-surface"]').then(($surface) => {
-      sendTouch($surface[0], 'touchend', 160)
+      sendTouch($surface[0], 'touchmove', 160, startY)
+    })
+    cy.get('#data-restore-panel').should(($restore) => {
+      const backup = Cypress.$('#data-backup-panel')[0]
+      const gap =
+        $restore[0].getBoundingClientRect().left -
+        backup.getBoundingClientRect().right
+      expect(gap).to.be.closeTo(12, 0.1)
+    })
+    cy.get('[data-testid="backup-swipe-surface"]').then(($surface) => {
+      sendTouch($surface[0], 'touchend', 160, startY)
     })
     cy.get('#data-restore-panel').should('have.attr', 'aria-hidden', 'false')
     cy.get('[data-testid="backup-swipe-surface"]').then(($surface) => {
