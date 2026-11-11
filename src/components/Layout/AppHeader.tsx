@@ -81,7 +81,8 @@ export const AppHeader = () => {
       const drawerWidth = drawerRef.current?.clientWidth ?? 0
       const drawer = drawerRef.current
       if (drawer) {
-        drawer.style.transition = 'none'
+        drawer.style.transition =
+          'transform 200ms cubic-bezier(0.22, 1, 0.36, 1), translate 0ms'
         drawer.style.translate = `${Math.max(-drawerWidth, swipe.deltaX)}px 0`
       }
     },
@@ -100,7 +101,7 @@ export const AppHeader = () => {
         const drawer = drawerRef.current
         if (drawer) {
           drawer.style.transition =
-            'translate 180ms cubic-bezier(0.22, 1, 0.36, 1)'
+            'transform 200ms cubic-bezier(0.22, 1, 0.36, 1), translate 180ms cubic-bezier(0.22, 1, 0.36, 1)'
           drawer.style.translate = '0px 0'
         }
       }
@@ -113,7 +114,8 @@ export const AppHeader = () => {
   const handleSwipeCancel = () => {
     const drawer = drawerRef.current
     if (drawer) {
-      drawer.style.transition = 'translate 180ms cubic-bezier(0.22, 1, 0.36, 1)'
+      drawer.style.transition =
+        'transform 200ms cubic-bezier(0.22, 1, 0.36, 1), translate 180ms cubic-bezier(0.22, 1, 0.36, 1)'
       drawer.style.translate = '0px 0'
     }
   }
