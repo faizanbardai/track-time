@@ -64,6 +64,8 @@ export const AppHeader = () => {
   const { timeFormat, setTimeFormat } = useSettings()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const drawerRef = useRef<HTMLElement>(null)
+  const [dragOffset, setDragOffset] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
 
   const closeDrawer = (restoreFocus = true) => {
     setOpen(false)
@@ -72,12 +74,30 @@ export const AppHeader = () => {
 
   const swipeHandlers = useSwipeable({
     delta: 8,
-    onSwiped: (swipe) => {
+    onSwiping: (swipe) => {
       if (
-        swipe.deltaX <= -80 &&
-        hasHorizontalSwipeIntent(swipe.absX, swipe.absY)
-      ) {
+        swipe.deltaX >= 0 ||
+        !hasHorizontalSwipeIntent(swipe.absX, swipe.absY)
+      )
+        return
+      setIsDragging(true)
+      const drawerWidth = drawerRef.current?.clientWidth ?? 0
+      setDragOffset(Math.max(-drawerWidth, swipe.deltaX))
+    },
+    onSwiped: (swipe) => {
+      setIsDragging(false)
+      const drawerWidth = drawerRef.current?.clientWidth ?? 0
+      const closeDistance = Math.max(80, drawerWidth * 0.25)
+      const shouldClose =
+        swipe.deltaX < 0 &&
+        hasHorizontalSwipeIntent(swipe.absX, swipe.absY) &&
+        (swipe.absX >= closeDistance ||
+          (swipe.absX >= 24 && Math.abs(swipe.vxvy[0]) >= 0.45))
+
+      if (shouldClose) {
         closeDrawer()
+      } else {
+        setDragOffset(0)
       }
     },
     preventScrollOnSwipe: false,
@@ -85,6 +105,10 @@ export const AppHeader = () => {
     trackTouch: true,
   })
   const { ref: swipeRef, ...swipeProps } = swipeHandlers
+  const handleSwipeCancel = () => {
+    setIsDragging(false)
+    setDragOffset(0)
+  }
   const setDrawerRef = useCallback(
     (element: HTMLElement | null) => {
       drawerRef.current = element
@@ -149,7 +173,10 @@ export const AppHeader = () => {
             aria-haspopup="dialog"
             aria-expanded={open}
             aria-controls="app-navigation"
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setDragOffset(0)
+              setOpen(true)
+            }}
           >
             <Menu aria-hidden="true" />
           </Button>
@@ -184,6 +211,7 @@ export const AppHeader = () => {
         <aside
           {...swipeProps}
           ref={setDrawerRef}
+          onTouchCancel={handleSwipeCancel}
           id="app-navigation"
           role="dialog"
           aria-modal="true"
@@ -192,6 +220,12 @@ export const AppHeader = () => {
             'relative flex h-full w-[min(20rem,85vw)] touch-pan-y flex-col overflow-y-auto border-r bg-background shadow-xl will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
             open ? 'translate-x-0' : '-translate-x-full',
           )}
+          style={{
+            translate: `${dragOffset}px 0`,
+            transition: isDragging
+              ? 'none'
+              : 'translate 220ms cubic-bezier(0.22, 1, 0.36, 1)',
+          }}
         >
           <div className="flex h-14 items-center justify-between border-b px-4">
             <h2 id="navigation-title" className="font-semibold">
