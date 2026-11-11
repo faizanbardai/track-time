@@ -52,7 +52,7 @@ This is a Next.js application for tracking time and events. It uses TypeScript, 
 - Key rules:
   - No unused variables
   - Prettier formatting enforced
-- Run `npm run lint` or `npm run eslint` to check for lint errors, and `npm run eslint:fix` to auto-fix.
+- Run `npm run lint` to check for lint errors, and `npm run eslint:fix` to auto-fix.
 
 ### Best Practices for Copilot
 

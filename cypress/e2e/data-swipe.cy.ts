@@ -29,7 +29,8 @@ describe('Backup and restore pager', () => {
   it('fits the viewport, keeps a gap during swipes, and settles at the viewport edge', () => {
     cy.get('[data-testid="backup-swipe-surface"]').should(($surface) => {
       const bounds = $surface[0].getBoundingClientRect()
-      const viewportWidth = $surface[0].ownerDocument.documentElement.clientWidth
+      const viewportWidth =
+        $surface[0].ownerDocument.documentElement.clientWidth
       expect(bounds.left).to.be.at.least(0)
       expect(bounds.right).to.be.at.most(viewportWidth)
     })
