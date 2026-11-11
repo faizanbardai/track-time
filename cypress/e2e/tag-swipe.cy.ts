@@ -1,4 +1,4 @@
-import { DB_VERSION } from '@/helpers/indexedDB/constants'
+import { DB_VERSION } from '../../src/helpers/indexedDB/constants'
 
 const seedDatabase = () => {
   const now = new Date().toISOString()
