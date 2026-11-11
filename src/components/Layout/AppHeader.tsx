@@ -74,9 +74,8 @@ export const AppHeader = () => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     const drawer = drawerRef.current
     if (drawer) {
-      drawer.style.transition =
-        'transform 200ms cubic-bezier(0.22, 1, 0.36, 1), translate 180ms cubic-bezier(0.22, 1, 0.36, 1)'
-      drawer.style.translate = '0px 0'
+      drawer.style.transition = 'translate 200ms cubic-bezier(0.22, 1, 0.36, 1)'
+      drawer.style.translate = ''
     }
     setPanelVisible(false)
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -100,8 +99,7 @@ export const AppHeader = () => {
       const drawerWidth = drawerRef.current?.clientWidth ?? 0
       const drawer = drawerRef.current
       if (drawer) {
-        drawer.style.transition =
-          'transform 200ms cubic-bezier(0.22, 1, 0.36, 1), translate 0ms'
+        drawer.style.transition = 'translate 0ms'
         drawer.style.translate = `${Math.max(-drawerWidth, swipe.deltaX)}px 0`
       }
     },
@@ -125,8 +123,8 @@ export const AppHeader = () => {
         const drawer = drawerRef.current
         if (drawer) {
           drawer.style.transition =
-            'transform 200ms cubic-bezier(0.22, 1, 0.36, 1), translate 180ms cubic-bezier(0.22, 1, 0.36, 1)'
-          drawer.style.translate = '0px 0'
+            'translate 180ms cubic-bezier(0.22, 1, 0.36, 1)'
+          drawer.style.translate = ''
         }
       }
     },
@@ -138,9 +136,8 @@ export const AppHeader = () => {
   const handleSwipeCancel = () => {
     const drawer = drawerRef.current
     if (drawer) {
-      drawer.style.transition =
-        'transform 200ms cubic-bezier(0.22, 1, 0.36, 1), translate 180ms cubic-bezier(0.22, 1, 0.36, 1)'
-      drawer.style.translate = '0px 0'
+      drawer.style.transition = 'translate 180ms cubic-bezier(0.22, 1, 0.36, 1)'
+      drawer.style.translate = ''
     }
   }
   const setDrawerRef = useCallback(
@@ -240,7 +237,7 @@ export const AppHeader = () => {
                 onClick={() => {
                   if (drawerRef.current) {
                     drawerRef.current.style.transition = ''
-                    drawerRef.current.style.translate = '0px 0'
+                    drawerRef.current.style.translate = ''
                   }
                 }}
               >
@@ -273,7 +270,7 @@ export const AppHeader = () => {
               id="app-navigation"
               aria-labelledby="navigation-title"
               className={cn(
-                'fixed inset-y-0 left-0 z-[51] flex h-dvh w-[min(20rem,85vw)] touch-pan-y flex-col overflow-y-auto border-r bg-background pt-[env(safe-area-inset-top)] shadow-xl will-change-transform transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+                'fixed inset-y-0 left-0 z-[51] flex h-dvh w-[min(20rem,85vw)] touch-pan-y flex-col overflow-y-auto border-r bg-background pt-[env(safe-area-inset-top)] shadow-xl will-change-transform transition-[translate] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
                 panelVisible ? 'translate-x-0' : '-translate-x-full',
               )}
             >

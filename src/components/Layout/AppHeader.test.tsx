@@ -106,10 +106,20 @@ describe('AppHeader navigation drawer', () => {
 
   it('closes after swiping left far enough on the drawer', () => {
     render(<AppHeader />)
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300)
     fireEvent.click(
       screen.getByRole('button', { name: 'Open navigation menu' }),
     )
+    const drawer = screen.getByRole('dialog', { name: 'Track Time' })
     act(() => {
+      swipeable.props?.onSwiping?.({
+        absX: 60,
+        absY: 0,
+        deltaX: -60,
+        event: new Event('touchmove'),
+        vxvy: [-0.2, 0],
+      } as SwipeEventData)
+      expect(drawer.style.translate).toBe('-60px 0')
       swipeable.props?.onSwiped?.({
         absX: 120,
         absY: 0,
@@ -118,6 +128,8 @@ describe('AppHeader navigation drawer', () => {
         vxvy: [-0.2, 0],
       } as SwipeEventData)
     })
+    expect(drawer.style.translate).toBe('')
+    expect(drawer.className).toContain('-translate-x-full')
     act(() => vi.advanceTimersByTime(220))
     expect(screen.queryByRole('dialog', { name: 'Track Time' })).toBeNull()
   })
