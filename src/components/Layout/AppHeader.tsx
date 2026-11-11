@@ -11,10 +11,12 @@ import {
   X,
 } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSwipeable } from 'react-swipeable'
 import { useTheme } from 'next-themes'
 import { useSettings } from '@/components/providers/settings'
 import { Button } from '@/components/ui/button'
+import { hasHorizontalSwipeIntent } from '@/components/ui/useSwipeNavigation'
 import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { PATHS } from '@/constants/paths'
 import { cn } from '@/lib/utils'
@@ -67,6 +69,29 @@ export const AppHeader = () => {
     setOpen(false)
     if (restoreFocus) requestAnimationFrame(() => triggerRef.current?.focus())
   }
+
+  const swipeHandlers = useSwipeable({
+    delta: 8,
+    onSwiped: (swipe) => {
+      if (
+        swipe.deltaX <= -80 &&
+        hasHorizontalSwipeIntent(swipe.absX, swipe.absY)
+      ) {
+        closeDrawer()
+      }
+    },
+    preventScrollOnSwipe: false,
+    trackMouse: false,
+    trackTouch: true,
+  })
+  const { ref: swipeRef, ...swipeProps } = swipeHandlers
+  const setDrawerRef = useCallback(
+    (element: HTMLElement | null) => {
+      drawerRef.current = element
+      swipeRef(element)
+    },
+    [swipeRef],
+  )
 
   useEffect(() => {
     if (!open) return
@@ -157,13 +182,14 @@ export const AppHeader = () => {
           onClick={() => closeDrawer()}
         />
         <aside
-          ref={drawerRef}
+          {...swipeProps}
+          ref={setDrawerRef}
           id="app-navigation"
           role="dialog"
           aria-modal="true"
           aria-labelledby="navigation-title"
           className={cn(
-            'relative flex h-full w-[min(20rem,85vw)] flex-col overflow-y-auto border-r bg-background shadow-xl will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+            'relative flex h-full w-[min(20rem,85vw)] touch-pan-y flex-col overflow-y-auto border-r bg-background shadow-xl will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
             open ? 'translate-x-0' : '-translate-x-full',
           )}
         >
