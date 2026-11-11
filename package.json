@@ -12,6 +12,8 @@
     "prettier": "prettier --check .",
     "prettier:fix": "prettier --write .",
     "test": "vitest run",
+    "check": "npm run test && npm run knip && npm run lint && npm run prettier",
+    "prepare": "husky",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },
@@ -50,6 +52,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "fake-indexeddb": "^6.2.5",
+    "husky": "^9.1.7",
     "jsdom": "^24.1.3",
     "knip": "^5.88.1",
     "prettier": "^3.6.2",
