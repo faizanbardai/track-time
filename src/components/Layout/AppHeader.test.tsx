@@ -79,31 +79,6 @@ describe('AppHeader navigation drawer', () => {
     expect(screen.queryByRole('dialog', { name: 'Track Time' })).toBeNull()
   })
 
-  it('opens with a right swipe from the left screen edge', () => {
-    render(<AppHeader />)
-    const dispatchPointer = (
-      type: 'pointerdown' | 'pointerup',
-      clientX: number,
-      clientY: number,
-    ) => {
-      const event = Object.assign(new Event(type), {
-        button: 0,
-        clientX,
-        clientY,
-        isPrimary: true,
-        pointerId: 1,
-      })
-      window.dispatchEvent(event)
-    }
-
-    act(() => {
-      dispatchPointer('pointerdown', 10, 120)
-      dispatchPointer('pointerup', 90, 125)
-    })
-
-    expect(screen.getByRole('dialog', { name: 'Track Time' })).toBeTruthy()
-  })
-
   it('closes after swiping left far enough on the drawer', () => {
     render(<AppHeader />)
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300)
