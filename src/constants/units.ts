@@ -1,4 +1,4 @@
-export const timeUnits = [
+const timeUnits = [
   'seconds',
   'minutes',
   'hours',
@@ -6,8 +6,6 @@ export const timeUnits = [
   'months',
   'years',
 ] as const
-
-export type TimeUnit = (typeof timeUnits)[number]
 
 export const units = [
   ...timeUnits.map((name) => ({

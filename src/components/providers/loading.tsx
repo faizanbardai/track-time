@@ -68,7 +68,7 @@ export const useLoadingActions = () => {
   return context
 }
 
-export const useLoadingState = () => {
+const useLoadingState = () => {
   const context = useContext(LoadingStateContext)
   if (context === undefined)
     throw new Error('useLoadingState must be used within LoadingProvider')

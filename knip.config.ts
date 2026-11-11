@@ -1,13 +1,13 @@
 import type { KnipConfig } from 'knip'
 
 const config: KnipConfig = {
-  entry: [],
-  project: ['src/app/**/*.tsx'],
+  entry: ['src/app/**/*.{ts,tsx}'],
+  project: ['src/**/*.{js,jsx,ts,tsx}', 'src/**/*.css'],
   ignoreDependencies: [
     'postcss',
-    'eslint',
     'eslint-config-next',
-    'tailwindcss',
+    'eslint-config-prettier',
+    'eslint-plugin-prettier',
   ],
 }
 

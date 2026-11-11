@@ -8,12 +8,7 @@ import type { TimeFormat } from '@/components/providers/settings'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-export type EventStatus =
-  | 'upcoming'
-  | 'ongoing'
-  | 'completed'
-  | 'today'
-  | 'past'
+type EventStatus = 'upcoming' | 'ongoing' | 'completed' | 'today' | 'past'
 
 export const isValidTimeZone = (zone: string) => {
   try {

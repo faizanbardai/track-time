@@ -411,10 +411,6 @@ export const listUpcomingEvents = async (
   return attachTagsToEvents(events)
 }
 
-export const listEvents = async (): Promise<EventWithTags[]> => {
-  return listEventsByTag(ALL_TAG_ID)
-}
-
 export const getEvent = async (
   eventId: string,
 ): Promise<EventWithTags | null> => {
@@ -507,8 +503,4 @@ export const reorderEventsInTag = async (
       }),
     )
   })
-}
-
-export const reorderEvents = async (eventIds: string[]): Promise<void> => {
-  return reorderEventsInTag(ALL_TAG_ID, eventIds)
 }

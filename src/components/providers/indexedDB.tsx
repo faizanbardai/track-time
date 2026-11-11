@@ -4,7 +4,7 @@ import { db } from '@/helpers/indexedDB'
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useLoadingActions } from '@/components/providers/loading'
 
-export type IndexedDBContextType = {
+type IndexedDBContextType = {
   dbReady: boolean
   dbError: string | null
 }

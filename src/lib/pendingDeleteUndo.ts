@@ -2,7 +2,7 @@ import type { DeletedEventSnapshot } from '@/helpers/indexedDB'
 
 const PENDING_DELETE_UNDO_KEY = 'track-time:pending-delete-undo'
 
-export interface PendingDeleteUndo {
+interface PendingDeleteUndo {
   snapshot: DeletedEventSnapshot
   expiresAt: number
 }
