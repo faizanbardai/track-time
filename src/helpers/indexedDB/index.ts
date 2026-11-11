@@ -10,6 +10,7 @@ import type {
   TagOrder,
   TagWithUsage,
 } from '@/types/event'
+import { DB_VERSION } from './constants'
 
 export type EventDraft = Omit<Event, 'createdAt' | 'updatedAt'> &
   Partial<Pick<Event, 'createdAt' | 'updatedAt'>>
@@ -58,7 +59,7 @@ class TrackTimeDB extends Dexie {
       tagEventOrder:
         '&id, tagId, eventId, [tagId+sortOrder], [tagId+eventId], createdAt, updatedAt',
     })
-    this.version(3).stores({
+    this.version(DB_VERSION).stores({
       events: '&id, datetime, createdAt, updatedAt',
       tags: '&id, &name, system, createdAt, updatedAt',
       tagEventOrder:

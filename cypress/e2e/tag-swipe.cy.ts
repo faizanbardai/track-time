@@ -1,3 +1,5 @@
+import { DB_VERSION } from '../../src/helpers/indexedDB/constants'
+
 const seedDatabase = () => {
   const now = new Date().toISOString()
   const request = indexedDB.deleteDatabase('track-time-local')
@@ -5,7 +7,8 @@ const seedDatabase = () => {
   return new Cypress.Promise<void>((resolve, reject) => {
     request.onerror = () => reject(request.error)
     request.onsuccess = () => {
-      const openRequest = indexedDB.open('track-time-local', 3)
+      // Dexie stores versions as tenths in native IndexedDB.
+      const openRequest = indexedDB.open('track-time-local', DB_VERSION * 10)
       openRequest.onerror = () => reject(openRequest.error)
       openRequest.onupgradeneeded = () => {
         const database = openRequest.result
