@@ -19,6 +19,7 @@ import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { PATHS } from '@/constants/paths'
 import { cn } from '@/lib/utils'
 import Container from '@/ui/Container/Container'
+import packageJson from '../../../package.json'
 
 const navigation = [
   {
@@ -270,7 +271,10 @@ export const AppHeader = () => {
               className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Code2 aria-hidden="true" className="size-5" />
-              GitHub repository
+              <span className="leading-none">GitHub repository</span>
+              <span className="inline-flex items-center rounded border bg-muted px-1.5 py-1 text-[11px] leading-none font-medium text-muted-foreground">
+                v{packageJson.version}
+              </span>
               <ExternalLink
                 aria-hidden="true"
                 className="ml-auto size-4 text-muted-foreground"
