@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.2.0...track-time-v0.3.0) (2026-11-12)
+
+
+### Features
+
+* polish header navigation and breadcrumbs ([#74](https://github.com/faizanbardai/track-time/issues/74)) ([557d117](https://github.com/faizanbardai/track-time/commit/557d11776bace8b8440f805bc99421954d01867b))
+
 ## [0.2.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.1.0...track-time-v0.2.0) (2026-11-12)
 
 ### Features
