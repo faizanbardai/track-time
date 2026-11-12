@@ -48,6 +48,10 @@ npm run build
 npm run start
 ```
 
+## Releases
+
+Release Please opens a release pull request based on Conventional Commit messages. Use `feat:` for features, `fix:` for bug fixes, and `!` after the type for breaking changes (for example, `feat!: ...`). Merging the release pull request updates the app version and changelog, creates a version tag and GitHub Release, and triggers the tagged build workflow.
+
 ## Built with
 
 Next.js, React, TypeScript, Tailwind CSS, and Dexie for IndexedDB. The app is installable as a progressive web app and uses Serwist for service-worker support.
