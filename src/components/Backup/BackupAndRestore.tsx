@@ -19,6 +19,7 @@ import {
   encryptBackup,
   restoreBackup,
   summarizeBackup,
+  validateEncryptedBackupFile,
 } from '@/helpers/indexedDB/backup'
 import type { BackupSummary, BackupV1 } from '@/types/backup'
 import { AlertDialog } from '@/components/ui/alert-dialog'
@@ -130,9 +131,14 @@ export const BackupAndRestore = () => {
       startLoading()
       const contents = await file.text()
       if (readId !== fileReadId.current) return
+      if (!contents.trim()) throw new Error('The selected backup file is empty')
+      validateEncryptedBackupFile(contents)
       setFileContents(contents)
     } catch (error) {
       if (readId !== fileReadId.current) return
+      setSelectedFile(null)
+      setFileContents(null)
+      input.value = ''
       setImportError(getMessage(error, 'Unable to read the selected file.'))
     } finally {
       stopLoading()
@@ -222,10 +228,17 @@ export const BackupAndRestore = () => {
                   </p>
                   <div className="grid gap-2">
                     <Label htmlFor="export-password">Backup password</Label>
+                    <p
+                      id="export-password-hint"
+                      className="text-sm text-muted-foreground"
+                    >
+                      Use at least 8 characters.
+                    </p>
                     <Input
                       id="export-password"
                       type="password"
                       minLength={8}
+                      aria-describedby="export-password-hint"
                       autoComplete="new-password"
                       value={exportPassword}
                       onChange={(event) =>

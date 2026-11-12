@@ -22,7 +22,7 @@ export const useEvent = () => {
       startLoading()
       const newEventData: EventDraft = {
         id: id || uuid(),
-        title,
+        title: title.trim(),
         anniversaryProgressEnabled: eventFormData.anniversaryProgressEnabled,
         ...serializeEventDates(eventFormData),
         seconds,

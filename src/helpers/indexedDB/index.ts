@@ -80,6 +80,10 @@ const validateTagName = (name: string) => {
   const normalized = normalizeTagName(name)
 
   if (!normalized) throw new Error('Tag name cannot be empty')
+  if (normalized.length > 50)
+    throw new Error('Tag name cannot exceed 50 characters')
+  if (normalized.includes(','))
+    throw new Error('Tag names cannot contain commas')
   if (normalizeTagKey(normalized) === normalizeTagKey(ALL_TAG_NAME)) {
     throw new Error(`“${ALL_TAG_NAME}” is reserved for the system tag`)
   }

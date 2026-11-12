@@ -13,6 +13,7 @@ import { units } from '@/constants/units'
 import { getEventDefaultValues } from '@/helpers/datetime/getEventDefaultValues'
 import dayjs from 'dayjs'
 import {
+  isValidCalendarDate,
   isValidTimeZone,
   parseEventInput,
 } from '@/helpers/datetime/eventTiming'
@@ -104,11 +105,27 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
               <div className="grid gap-2">
                 <Label htmlFor="title">Title</Label>
                 <Input
-                  {...register('title')}
+                  {...register('title', {
+                    validate: (value) =>
+                      Boolean(value.trim()) || 'Enter an event title',
+                  })}
                   id="title"
                   placeholder="Title"
                   required
+                  aria-invalid={Boolean(formState.errors.title)}
+                  aria-describedby={
+                    formState.errors.title ? 'title-error' : undefined
+                  }
                 />
+                {formState.errors.title && (
+                  <p
+                    id="title-error"
+                    role="alert"
+                    className="text-sm text-destructive"
+                  >
+                    {formState.errors.title.message}
+                  </p>
+                )}
               </div>
               <label className="flex items-center gap-2">
                 <Controller
@@ -151,7 +168,29 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
               >
                 <div className="grid gap-2">
                   <Label htmlFor="date">{hasEnd ? 'Start date' : 'Date'}</Label>
-                  <Input {...register('date')} id="date" type="date" required />
+                  <Input
+                    {...register('date', {
+                      validate: (value) =>
+                        isValidCalendarDate(value) ||
+                        'Enter a valid start date',
+                    })}
+                    id="date"
+                    type="date"
+                    required
+                    aria-invalid={Boolean(formState.errors.date)}
+                    aria-describedby={
+                      formState.errors.date ? 'date-error' : undefined
+                    }
+                  />
+                  {formState.errors.date && (
+                    <p
+                      id="date-error"
+                      role="alert"
+                      className="text-sm text-destructive"
+                    >
+                      {formState.errors.date.message}
+                    </p>
+                  )}
                 </div>
                 {hasEnd && (
                   <div className="grid gap-2">
@@ -160,7 +199,8 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
                       {...register('endDate', {
                         validate: (value, values) => {
                           if (!values.hasEnd) return true
-                          if (!value) return 'Enter an end date'
+                          if (!isValidCalendarDate(value))
+                            return 'Enter a valid end date'
                           if (values.dateOnly)
                             return (
                               value >= values.date ||
@@ -189,6 +229,10 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
                       type="date"
                       min={dateOnly ? startDate : undefined}
                       required
+                      aria-invalid={Boolean(formState.errors.endDate)}
+                      aria-describedby={
+                        formState.errors.endDate ? 'end-date-error' : undefined
+                      }
                     />
                   </div>
                 )}
@@ -272,6 +316,7 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
                 )}
                 {hasEnd && formState.errors.endDate && (
                   <p
+                    id="end-date-error"
                     role="alert"
                     className="col-span-full text-sm text-destructive"
                   >
