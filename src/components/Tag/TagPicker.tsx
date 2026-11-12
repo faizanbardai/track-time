@@ -90,6 +90,15 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
       normalizeTagKey(normalizedQuery) === normalizeTagKey('All')
     )
       return
+    if (normalizedQuery.includes(',')) {
+      setError('Tag names cannot contain commas')
+      return
+    }
+    if (normalizedQuery.length > 50) {
+      setError('Tag names cannot exceed 50 characters')
+      return
+    }
+    setError(null)
     const existing = tags.find(
       (tag) => normalizeTagKey(tag.name) === normalizeTagKey(normalizedQuery),
     )
@@ -125,7 +134,13 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
       <div className="relative">
         <Input
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          maxLength={50}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? 'tag-picker-error' : undefined}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setError(null)
+          }}
           onFocus={() => setOpen(true)}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -190,7 +205,11 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
         )}
       </div>
       {error && (
-        <p role="alert" className="text-xs text-destructive">
+        <p
+          id="tag-picker-error"
+          role="alert"
+          className="text-xs text-destructive"
+        >
           {error}
         </p>
       )}

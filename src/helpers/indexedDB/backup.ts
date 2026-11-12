@@ -123,6 +123,10 @@ const parseTag = (value: unknown, index: number): Tag => {
 
   const name = requireString(item.name, `${prefix} name`)
   if (!name.trim()) throw new Error(`${prefix} name cannot be blank`)
+  if (!item.system && name.trim().length > 50)
+    throw new Error(`${prefix} name cannot exceed 50 characters`)
+  if (!item.system && name.includes(','))
+    throw new Error(`${prefix} name cannot contain commas`)
 
   return {
     id: requireString(item.id, `${prefix} id`),
@@ -446,6 +450,16 @@ const validateEnvelope = (value: unknown): EncryptedBackupV1 => {
     },
     ciphertext: requireString(root.ciphertext, 'Encrypted backup data'),
   }
+}
+
+export const validateEncryptedBackupFile = (source: string) => {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(source)
+  } catch {
+    throw new Error('The selected file is not valid JSON')
+  }
+  validateEnvelope(parsed)
 }
 
 export const decryptBackup = async (
