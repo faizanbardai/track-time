@@ -4,10 +4,23 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { SwipeEventData, SwipeableProps } from 'react-swipeable'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppHeader } from './AppHeader'
+import { dispatchActiveTagChange } from '@/lib/activeTagChange'
 
-const swipeable = vi.hoisted(() => ({ props: null as SwipeableProps | null }))
+const { swipeable, currentPath } = vi.hoisted(() => ({
+  swipeable: { props: null as SwipeableProps | null },
+  currentPath: { value: '/' },
+}))
 
-vi.mock('next/navigation', () => ({ usePathname: () => '/' }))
+vi.mock('next/navigation', () => ({ usePathname: () => currentPath.value }))
+vi.mock('@/components/providers/indexedDB', () => ({
+  useIndexedDB: () => ({ dbReady: false }),
+}))
+vi.mock('@/helpers/indexedDB', () => ({
+  db: { tags: { get: vi.fn(async () => null) } },
+  getCachedEvent: () => null,
+  getEvent: vi.fn(async () => null),
+  UPCOMING_TAG_ID: 'upcoming',
+}))
 vi.mock('next-themes', () => ({
   useTheme: () => ({ theme: 'system', setTheme: vi.fn() }),
 }))
@@ -27,6 +40,7 @@ vi.mock('react-swipeable', () => ({
 }))
 
 beforeEach(() => {
+  currentPath.value = '/'
   vi.useFakeTimers()
   vi.stubGlobal('matchMedia', () => ({ matches: false }))
 })
@@ -38,6 +52,39 @@ afterEach(() => {
 })
 
 describe('AppHeader navigation drawer', () => {
+  it('shows the current page in an accessible breadcrumb', () => {
+    currentPath.value = '/tags'
+    render(<AppHeader />)
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(breadcrumb.textContent).toContain('Events')
+    expect(breadcrumb.textContent).toContain('Manage tags')
+    expect(
+      screen.getByRole('link', { name: 'Events' }).getAttribute('href'),
+    ).toBe('/')
+    expect(screen.getByText('Manage tags').getAttribute('aria-current')).toBe(
+      'page',
+    )
+  })
+
+  it('uses a stable fallback label for an event while its title is unavailable', () => {
+    currentPath.value = '/event/event-1'
+    render(<AppHeader />)
+
+    expect(screen.getByText('Edit event').getAttribute('aria-current')).toBe(
+      'page',
+    )
+  })
+
+  it('shows the active event filter in the breadcrumb', () => {
+    render(<AppHeader />)
+    act(() => dispatchActiveTagChange('upcoming'))
+
+    expect(screen.getByText('Upcoming').getAttribute('aria-current')).toBe(
+      'page',
+    )
+  })
+
   it('opens the modal drawer and closes it from the close button', () => {
     render(<AppHeader />)
 

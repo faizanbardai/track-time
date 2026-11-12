@@ -20,7 +20,6 @@ import { formatTagNames } from '@/helpers/indexedDB'
 import { TagPicker } from '@/components/Tag/TagPicker'
 import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { PATHS } from '@/constants/paths'
-import { ArrowLeft } from 'lucide-react'
 
 interface EventPageProps {
   event: EventWithTags | null
@@ -93,16 +92,6 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
 
   return (
     <div className="grid content-start gap-4 pb-24">
-      {!event?.id && (
-        <div className="flex items-center">
-          <Button asChild variant="outline">
-            <OfflineAwareLink href={PATHS.HOME} replace>
-              <ArrowLeft aria-hidden="true" />
-              Back to events
-            </OfflineAwareLink>
-          </Button>
-        </div>
-      )}
       <Card className="gap-4 py-4">
         <form id="event-form" onSubmit={handleSubmit(onSubmit)}>
           <CardContent>

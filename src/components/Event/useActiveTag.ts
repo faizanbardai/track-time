@@ -3,6 +3,7 @@ import { Tag } from '@/types/event'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { isBrowserOffline } from '@/lib/offlineNavigation'
+import { dispatchActiveTagChange } from '@/lib/activeTagChange'
 
 const TAG_QUERY_PARAM = 'tag'
 const ACTIVE_TAG_STORAGE_KEY = 'track-time:active-tag-id'
@@ -38,6 +39,7 @@ export const useActiveTag = (tags: Tag[]) => {
 
     setActiveTagId(nextTagId)
     setSelectionReady(true)
+    dispatchActiveTagChange(nextTagId === ALL_TAG_ID ? null : nextTagId)
 
     if (nextTagId === ALL_TAG_ID) {
       window.localStorage.removeItem(ACTIVE_TAG_STORAGE_KEY)
@@ -60,6 +62,7 @@ export const useActiveTag = (tags: Tag[]) => {
   const selectTag = useCallback(
     (tagId: string) => {
       setActiveTagId(tagId)
+      dispatchActiveTagChange(tagId === ALL_TAG_ID ? null : tagId)
 
       if (tagId === ALL_TAG_ID) {
         window.localStorage.removeItem(ACTIVE_TAG_STORAGE_KEY)

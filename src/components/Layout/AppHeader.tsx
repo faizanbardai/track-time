@@ -1,26 +1,20 @@
 'use client'
 
-import { Menu } from 'lucide-react'
+import { ChevronRight, Menu } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Button } from '@/components/ui/button'
 import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { PATHS } from '@/constants/paths'
+import { NAVIGATION_LABELS } from '@/constants/navigation'
 import Container from '@/ui/Container/Container'
 import { AppDrawer } from './AppDrawer'
 import { useAppDrawer } from './useAppDrawer'
-
-const getPageTitle = (pathname: string) => {
-  if (pathname === PATHS.TAGS) return 'Manage tags'
-  if (pathname === PATHS.DATA) return 'Backup & restore'
-  if (pathname === PATHS.EVENT) return 'New event'
-  if (pathname.startsWith(`${PATHS.EVENT}/`)) return 'Edit event'
-  return 'Track Time'
-}
+import { useHeaderBreadcrumb } from './useHeaderBreadcrumb'
 
 export const AppHeader = () => {
   const pathname = usePathname()
-  const pageTitle = getPageTitle(pathname)
+  const breadcrumb = useHeaderBreadcrumb(pathname)
   const drawer = useAppDrawer()
 
   return (
@@ -43,15 +37,42 @@ export const AppHeader = () => {
               className="min-h-11 min-w-11"
               onClick={drawer.resetDrawerPosition}
             >
-              <Menu aria-hidden="true" />
+              <Menu aria-hidden="true" className="size-6" />
             </Button>
           </Dialog.Trigger>
-          <OfflineAwareLink
-            href={PATHS.HOME}
-            className="font-semibold tracking-tight"
-          >
-            {pageTitle}
-          </OfflineAwareLink>
+          <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
+            {breadcrumb.hasParent ? (
+              <ol className="flex min-w-0 items-center gap-1 text-sm">
+                <li className="shrink-0">
+                  <OfflineAwareLink
+                    href={PATHS.HOME}
+                    className="inline-flex min-h-11 items-center rounded-sm text-foreground/80 underline decoration-muted-foreground/50 underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                  >
+                    {NAVIGATION_LABELS.events}
+                  </OfflineAwareLink>
+                </li>
+                <li
+                  aria-hidden="true"
+                  className="shrink-0 text-muted-foreground"
+                >
+                  <ChevronRight className="size-4" />
+                </li>
+                <li className="min-w-0 text-base font-semibold tracking-tight">
+                  <span aria-current="page" className="block truncate">
+                    {breadcrumb.label}
+                  </span>
+                </li>
+              </ol>
+            ) : (
+              <ol className="flex min-w-0 items-center text-sm">
+                <li className="min-w-0 text-base font-semibold tracking-tight">
+                  <span aria-current="page" className="block truncate">
+                    {NAVIGATION_LABELS.events}
+                  </span>
+                </li>
+              </ol>
+            )}
+          </nav>
         </Container>
       </header>
       <AppDrawer

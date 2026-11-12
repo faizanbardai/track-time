@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "fix": "npm run eslint:fix && npm run prettier:fix && npm run knip",
     "knip": "knip",
     "eslint:fix": "eslint . --fix",
     "prettier": "prettier --check .",
