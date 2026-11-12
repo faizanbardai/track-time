@@ -14,13 +14,14 @@ import type { SwipeableHandlers } from 'react-swipeable'
 import { Button } from '@/components/ui/button'
 import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { PATHS } from '@/constants/paths'
+import { NAVIGATION_LABELS } from '@/constants/navigation'
 import { cn } from '@/lib/utils'
 import packageJson from '../../../package.json'
 import { DrawerSettings } from './DrawerSettings'
 
 const navigation = [
   {
-    label: 'Events',
+    label: NAVIGATION_LABELS.events,
     href: PATHS.HOME,
     icon: CalendarClock,
     isActive: (path: string) =>
@@ -29,13 +30,13 @@ const navigation = [
       path.startsWith(`${PATHS.EVENT}/`),
   },
   {
-    label: 'Edit tags',
+    label: NAVIGATION_LABELS.tags,
     href: PATHS.TAGS,
     icon: Tags,
     isActive: (path: string) => path === PATHS.TAGS,
   },
   {
-    label: 'Backup & restore',
+    label: NAVIGATION_LABELS.data,
     href: PATHS.DATA,
     icon: DatabaseBackup,
     isActive: (path: string) => path === PATHS.DATA,
