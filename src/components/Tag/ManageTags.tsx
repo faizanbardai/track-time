@@ -34,6 +34,7 @@ import { TagWithUsage } from '@/types/event'
 import { AlertDialog } from '@/components/ui/alert-dialog'
 import { useToast } from '@/components/providers/toast'
 import { useLoadingActions } from '@/components/providers/loading'
+import { MAX_TAG_NAME_LENGTH } from '@/constants/validation'
 
 interface SortableTagProps {
   tag: TagWithUsage
@@ -41,6 +42,7 @@ interface SortableTagProps {
   value: string
   busy: boolean
   onChange: (value: string) => void
+  error?: string | null
   onEdit: () => void
   onSave: () => void
   onCancel: () => void
@@ -53,6 +55,7 @@ const SortableTag = ({
   value,
   busy,
   onChange,
+  error,
   onEdit,
   onSave,
   onCancel,
@@ -75,24 +78,51 @@ const SortableTag = ({
       {...listeners}
     >
       {editing ? (
-        <Input
-          ref={inputRef}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          onPointerDown={(event) => event.stopPropagation()}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault()
-              onSave()
-            } else if (event.key === 'Escape') {
-              event.preventDefault()
-              onCancel()
+        <>
+          <Input
+            ref={inputRef}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            onPointerDown={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                onSave()
+              } else if (event.key === 'Escape') {
+                event.preventDefault()
+                onCancel()
+              }
+            }}
+            aria-label={`Rename ${tag.name}`}
+            maxLength={MAX_TAG_NAME_LENGTH}
+            aria-invalid={Boolean(error)}
+            aria-describedby={
+              error
+                ? `rename-${tag.id}-error rename-${tag.id}-count`
+                : `rename-${tag.id}-count`
             }
-          }}
-          aria-label={`Rename ${tag.name}`}
-          className="h-7 min-w-20 flex-1 rounded-full border-0 bg-transparent px-2 py-0 shadow-none focus-visible:ring-1"
-          disabled={busy}
-        />
+            className="h-7 min-w-20 flex-1 rounded-full border-0 bg-transparent px-2 py-0 shadow-none focus-visible:ring-1"
+            disabled={busy}
+          />
+          <span
+            id={`rename-${tag.id}-count`}
+            className={`text-[10px] ${value.length >= MAX_TAG_NAME_LENGTH ? 'font-medium text-destructive' : 'text-muted-foreground'}`}
+          >
+            {value.length}/{MAX_TAG_NAME_LENGTH}
+            {value.length >= MAX_TAG_NAME_LENGTH && (
+              <span role="status"> · Limit reached</span>
+            )}
+          </span>
+          {error && (
+            <span
+              id={`rename-${tag.id}-error`}
+              role="alert"
+              className="text-xs text-destructive"
+            >
+              {error}
+            </span>
+          )}
+        </>
       ) : (
         <button
           type="button"
@@ -135,7 +165,9 @@ export const ManageTags = () => {
   const { startLoading, stopLoading } = useLoadingActions()
   const [tags, setTags] = useState<TagWithUsage[]>([])
   const [names, setNames] = useState<Record<string, string>>({})
+  const [renameErrors, setRenameErrors] = useState<Record<string, string>>({})
   const [newName, setNewName] = useState('')
+  const [createError, setCreateError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
@@ -189,6 +221,7 @@ export const ManageTags = () => {
   const handleCreate = async (event: FormEvent) => {
     event.preventDefault()
     if (!newName.trim()) return
+    setCreateError(null)
     setSavingId('new')
     startLoading()
     try {
@@ -196,7 +229,9 @@ export const ManageTags = () => {
       setNewName('')
       await loadTags()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create tag')
+      setCreateError(
+        err instanceof Error ? err.message : 'Failed to create tag',
+      )
     } finally {
       setSavingId(null)
       stopLoading()
@@ -210,13 +245,17 @@ export const ManageTags = () => {
       return
     }
     setSavingId(tag.id)
+    setRenameErrors((current) => ({ ...current, [tag.id]: '' }))
     startLoading()
     try {
       await renameTag(tag.id, name)
       setEditingId(null)
       await loadTags()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to rename tag')
+      setRenameErrors((current) => ({
+        ...current,
+        [tag.id]: err instanceof Error ? err.message : 'Failed to rename tag',
+      }))
     } finally {
       setSavingId(null)
       stopLoading()
@@ -262,14 +301,36 @@ export const ManageTags = () => {
       <form onSubmit={handleCreate} className="flex gap-2">
         <Input
           value={newName}
-          onChange={(event) => setNewName(event.target.value)}
           placeholder="New tag name"
           aria-label="New tag name"
+          maxLength={MAX_TAG_NAME_LENGTH}
+          aria-invalid={Boolean(createError)}
+          aria-describedby={
+            createError ? 'new-tag-error new-tag-count' : 'new-tag-count'
+          }
+          onChange={(event) => {
+            setNewName(event.target.value)
+            setCreateError(null)
+          }}
         />
         <Button type="submit" disabled={!newName.trim() || savingId === 'new'}>
           {savingId === 'new' ? 'Adding...' : 'Add tag'}
         </Button>
       </form>
+      <p
+        id="new-tag-count"
+        className={`-mt-3 text-right text-xs ${newName.length >= MAX_TAG_NAME_LENGTH ? 'font-medium text-destructive' : 'text-muted-foreground'}`}
+      >
+        {newName.length}/{MAX_TAG_NAME_LENGTH} characters
+        {newName.length >= MAX_TAG_NAME_LENGTH && (
+          <span role="status"> · Limit reached</span>
+        )}
+      </p>
+      {createError && (
+        <p id="new-tag-error" role="alert" className="text-sm text-destructive">
+          {createError}
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -301,13 +362,22 @@ export const ManageTags = () => {
                     tag={tag}
                     editing={editingId === tag.id}
                     value={names[tag.id] ?? ''}
+                    error={renameErrors[tag.id] || null}
                     busy={savingId === tag.id}
-                    onChange={(value) =>
+                    onChange={(value) => {
                       setNames((current) => ({ ...current, [tag.id]: value }))
-                    }
+                      setRenameErrors((current) => ({
+                        ...current,
+                        [tag.id]: '',
+                      }))
+                    }}
                     onEdit={() => setEditingId(tag.id)}
                     onSave={() => void handleRename(tag)}
                     onCancel={() => {
+                      setRenameErrors((current) => ({
+                        ...current,
+                        [tag.id]: '',
+                      }))
                       setNames((current) => ({
                         ...current,
                         [tag.id]: tag.name,

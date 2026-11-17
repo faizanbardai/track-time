@@ -11,6 +11,10 @@ import type {
   TagWithUsage,
 } from '@/types/event'
 import { DB_VERSION } from './constants'
+import {
+  MAX_EVENT_TITLE_LENGTH,
+  MAX_TAG_NAME_LENGTH,
+} from '@/constants/validation'
 
 export type EventDraft = Omit<Event, 'createdAt' | 'updatedAt'> &
   Partial<Pick<Event, 'createdAt' | 'updatedAt'>>
@@ -80,6 +84,10 @@ const validateTagName = (name: string) => {
   const normalized = normalizeTagName(name)
 
   if (!normalized) throw new Error('Tag name cannot be empty')
+  if (normalized.length > MAX_TAG_NAME_LENGTH)
+    throw new Error(`Tag name cannot exceed ${MAX_TAG_NAME_LENGTH} characters`)
+  if (normalized.includes(','))
+    throw new Error('Tag names cannot contain commas')
   if (normalizeTagKey(normalized) === normalizeTagKey(ALL_TAG_NAME)) {
     throw new Error(`“${ALL_TAG_NAME}” is reserved for the system tag`)
   }
@@ -427,6 +435,12 @@ export const saveEvent = async (
   event: EventDraft,
   tagNames: string[] = [],
 ): Promise<string> => {
+  const normalizedTitle = event.title.trim()
+  if (!normalizedTitle) throw new Error('Event title cannot be blank')
+  if (normalizedTitle.length > MAX_EVENT_TITLE_LENGTH)
+    throw new Error(
+      `Event title cannot exceed ${MAX_EVENT_TITLE_LENGTH} characters`,
+    )
   return db.transaction(
     'rw',
     db.events,
@@ -438,6 +452,7 @@ export const saveEvent = async (
       const now = new Date().toISOString()
       const eventToSave: Event = {
         ...event,
+        title: normalizedTitle,
         createdAt: existing?.createdAt ?? event.createdAt ?? now,
         updatedAt: now,
       }

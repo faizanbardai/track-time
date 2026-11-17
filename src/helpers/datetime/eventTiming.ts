@@ -22,7 +22,17 @@ export const isValidTimeZone = (zone: string) => {
 export const parseEventInput = (date: string, time: string, zone: string) =>
   dayjs.tz(`${date}T${time}`, zone)
 
+export const isValidCalendarDate = (date: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false
+  const parsed = dayjs(date)
+  return parsed.isValid() && parsed.format('YYYY-MM-DD') === date
+}
+
 export const serializeEventDates = (form: EventFormData) => {
+  if (!isValidCalendarDate(form.date))
+    throw new Error('Enter a valid start date')
+  if (form.hasEnd && !isValidCalendarDate(form.endDate))
+    throw new Error('Enter a valid end date')
   if (!form.dateOnly) {
     for (const [date, time, zone] of [
       [form.date, form.time, form.timeZone],

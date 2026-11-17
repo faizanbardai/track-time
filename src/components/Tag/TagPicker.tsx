@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { listTags, normalizeTagKey, parseTagNames } from '@/helpers/indexedDB'
+import { MAX_TAG_NAME_LENGTH } from '@/constants/validation'
 import { Tag } from '@/types/event'
 import { useLoadingActions } from '@/components/providers/loading'
 
@@ -90,6 +91,15 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
       normalizeTagKey(normalizedQuery) === normalizeTagKey('All')
     )
       return
+    if (normalizedQuery.includes(',')) {
+      setError('Tag names cannot contain commas')
+      return
+    }
+    if (normalizedQuery.length > MAX_TAG_NAME_LENGTH) {
+      setError(`Tag names cannot exceed ${MAX_TAG_NAME_LENGTH} characters`)
+      return
+    }
+    setError(null)
     const existing = tags.find(
       (tag) => normalizeTagKey(tag.name) === normalizeTagKey(normalizedQuery),
     )
@@ -125,7 +135,15 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
       <div className="relative">
         <Input
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          maxLength={MAX_TAG_NAME_LENGTH}
+          aria-invalid={Boolean(error)}
+          aria-describedby={
+            error ? 'tag-picker-error tag-picker-count' : 'tag-picker-count'
+          }
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setError(null)
+          }}
           onFocus={() => setOpen(true)}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -189,8 +207,21 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
           </div>
         )}
       </div>
+      <p
+        id="tag-picker-count"
+        className={`text-right text-xs ${query.length >= MAX_TAG_NAME_LENGTH ? 'font-medium text-destructive' : 'text-muted-foreground'}`}
+      >
+        {query.length}/{MAX_TAG_NAME_LENGTH} characters
+        {query.length >= MAX_TAG_NAME_LENGTH && (
+          <span role="status"> · Limit reached</span>
+        )}
+      </p>
       {error && (
-        <p role="alert" className="text-xs text-destructive">
+        <p
+          id="tag-picker-error"
+          role="alert"
+          className="text-xs text-destructive"
+        >
           {error}
         </p>
       )}

@@ -7,6 +7,7 @@ import { serializeEventDates } from '@/helpers/datetime/eventTiming'
 import { EventDraft, parseTagNames, saveEvent } from '@/helpers/indexedDB'
 import { useLoadingActions } from '@/components/providers/loading'
 import { navigateWithOfflineFallback } from '@/lib/offlineNavigation'
+import { MAX_EVENT_TITLE_LENGTH } from '@/constants/validation'
 
 export const useEvent = () => {
   const router = useRouter()
@@ -18,11 +19,15 @@ export const useEvent = () => {
     const { id, title, tags, seconds, minutes, hours, days, months, years } =
       eventFormData
     setError(null)
+    if (title.trim().length > MAX_EVENT_TITLE_LENGTH) {
+      setError(`Title cannot exceed ${MAX_EVENT_TITLE_LENGTH} characters`)
+      return
+    }
     try {
       startLoading()
       const newEventData: EventDraft = {
         id: id || uuid(),
-        title,
+        title: title.trim(),
         anniversaryProgressEnabled: eventFormData.anniversaryProgressEnabled,
         ...serializeEventDates(eventFormData),
         seconds,
