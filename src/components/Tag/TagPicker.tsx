@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { listTags, normalizeTagKey, parseTagNames } from '@/helpers/indexedDB'
+import { MAX_TAG_NAME_LENGTH } from '@/constants/validation'
 import { Tag } from '@/types/event'
 import { useLoadingActions } from '@/components/providers/loading'
 
@@ -94,8 +95,8 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
       setError('Tag names cannot contain commas')
       return
     }
-    if (normalizedQuery.length > 50) {
-      setError('Tag names cannot exceed 50 characters')
+    if (normalizedQuery.length > MAX_TAG_NAME_LENGTH) {
+      setError(`Tag names cannot exceed ${MAX_TAG_NAME_LENGTH} characters`)
       return
     }
     setError(null)
@@ -134,9 +135,11 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
       <div className="relative">
         <Input
           value={query}
-          maxLength={50}
+          maxLength={MAX_TAG_NAME_LENGTH}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? 'tag-picker-error' : undefined}
+          aria-describedby={
+            error ? 'tag-picker-error tag-picker-count' : 'tag-picker-count'
+          }
           onChange={(event) => {
             setQuery(event.target.value)
             setError(null)
@@ -204,6 +207,15 @@ export const TagPicker = ({ value, onChange, onBlur }: TagPickerProps) => {
           </div>
         )}
       </div>
+      <p
+        id="tag-picker-count"
+        className={`text-right text-xs ${query.length >= MAX_TAG_NAME_LENGTH ? 'font-medium text-destructive' : 'text-muted-foreground'}`}
+      >
+        {query.length}/{MAX_TAG_NAME_LENGTH} characters
+        {query.length >= MAX_TAG_NAME_LENGTH && (
+          <span role="status"> · Limit reached</span>
+        )}
+      </p>
       {error && (
         <p
           id="tag-picker-error"

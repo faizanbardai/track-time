@@ -21,6 +21,7 @@ import { formatTagNames } from '@/helpers/indexedDB'
 import { TagPicker } from '@/components/Tag/TagPicker'
 import { OfflineAwareLink } from '@/components/OfflineAwareLink'
 import { PATHS } from '@/constants/paths'
+import { MAX_EVENT_TITLE_LENGTH } from '@/constants/validation'
 
 interface EventPageProps {
   event: EventWithTags | null
@@ -81,6 +82,7 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
   const startTime = watch('time')
   const endDate = watch('endDate')
   const endTime = watch('endTime')
+  const title = watch('title')
   const [differentEndZone, setDifferentEndZone] = useState(() => {
     const defaults = getFormDefaultValues(event, defaultTags)
     return defaults.timeZone !== defaults.endTimeZone
@@ -106,17 +108,33 @@ const CreateOrUpdateEvent = ({ event, defaultTags = '' }: EventPageProps) => {
                 <Label htmlFor="title">Title</Label>
                 <Input
                   {...register('title', {
+                    maxLength: {
+                      value: MAX_EVENT_TITLE_LENGTH,
+                      message: `Title cannot exceed ${MAX_EVENT_TITLE_LENGTH} characters`,
+                    },
                     validate: (value) =>
                       Boolean(value.trim()) || 'Enter an event title',
                   })}
                   id="title"
                   placeholder="Title"
+                  maxLength={MAX_EVENT_TITLE_LENGTH}
                   required
                   aria-invalid={Boolean(formState.errors.title)}
                   aria-describedby={
-                    formState.errors.title ? 'title-error' : undefined
+                    formState.errors.title
+                      ? 'title-error title-count'
+                      : 'title-count'
                   }
                 />
+                <p
+                  id="title-count"
+                  className={`text-right text-xs ${title.length >= MAX_EVENT_TITLE_LENGTH ? 'font-medium text-destructive' : 'text-muted-foreground'}`}
+                >
+                  {title.length}/{MAX_EVENT_TITLE_LENGTH} characters
+                  {title.length >= MAX_EVENT_TITLE_LENGTH && (
+                    <span role="status"> · Limit reached</span>
+                  )}
+                </p>
                 {formState.errors.title && (
                   <p
                     id="title-error"

@@ -34,6 +34,7 @@ import { TagWithUsage } from '@/types/event'
 import { AlertDialog } from '@/components/ui/alert-dialog'
 import { useToast } from '@/components/providers/toast'
 import { useLoadingActions } from '@/components/providers/loading'
+import { MAX_TAG_NAME_LENGTH } from '@/constants/validation'
 
 interface SortableTagProps {
   tag: TagWithUsage
@@ -93,12 +94,25 @@ const SortableTag = ({
               }
             }}
             aria-label={`Rename ${tag.name}`}
-            maxLength={50}
+            maxLength={MAX_TAG_NAME_LENGTH}
             aria-invalid={Boolean(error)}
-            aria-describedby={error ? `rename-${tag.id}-error` : undefined}
+            aria-describedby={
+              error
+                ? `rename-${tag.id}-error rename-${tag.id}-count`
+                : `rename-${tag.id}-count`
+            }
             className="h-7 min-w-20 flex-1 rounded-full border-0 bg-transparent px-2 py-0 shadow-none focus-visible:ring-1"
             disabled={busy}
           />
+          <span
+            id={`rename-${tag.id}-count`}
+            className={`text-[10px] ${value.length >= MAX_TAG_NAME_LENGTH ? 'font-medium text-destructive' : 'text-muted-foreground'}`}
+          >
+            {value.length}/{MAX_TAG_NAME_LENGTH}
+            {value.length >= MAX_TAG_NAME_LENGTH && (
+              <span role="status"> · Limit reached</span>
+            )}
+          </span>
           {error && (
             <span
               id={`rename-${tag.id}-error`}
@@ -289,9 +303,11 @@ export const ManageTags = () => {
           value={newName}
           placeholder="New tag name"
           aria-label="New tag name"
-          maxLength={50}
+          maxLength={MAX_TAG_NAME_LENGTH}
           aria-invalid={Boolean(createError)}
-          aria-describedby={createError ? 'new-tag-error' : undefined}
+          aria-describedby={
+            createError ? 'new-tag-error new-tag-count' : 'new-tag-count'
+          }
           onChange={(event) => {
             setNewName(event.target.value)
             setCreateError(null)
@@ -301,6 +317,15 @@ export const ManageTags = () => {
           {savingId === 'new' ? 'Adding...' : 'Add tag'}
         </Button>
       </form>
+      <p
+        id="new-tag-count"
+        className={`-mt-3 text-right text-xs ${newName.length >= MAX_TAG_NAME_LENGTH ? 'font-medium text-destructive' : 'text-muted-foreground'}`}
+      >
+        {newName.length}/{MAX_TAG_NAME_LENGTH} characters
+        {newName.length >= MAX_TAG_NAME_LENGTH && (
+          <span role="status"> · Limit reached</span>
+        )}
+      </p>
       {createError && (
         <p id="new-tag-error" role="alert" className="text-sm text-destructive">
           {createError}

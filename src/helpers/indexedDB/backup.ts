@@ -1,5 +1,9 @@
 import { isValidTimeZone } from '@/helpers/datetime/eventTiming'
 import {
+  MAX_EVENT_TITLE_LENGTH,
+  MAX_TAG_NAME_LENGTH,
+} from '@/constants/validation'
+import {
   ALL_TAG_ID,
   db,
   ensureSystemTags,
@@ -74,6 +78,12 @@ const parseEvent = (value: unknown, index: number): Event => {
     return date
   }
   const zones: { timeZone?: string; endTimeZone?: string } = {}
+  const title = requireString(item.title, `${prefix} title`)
+  if (!title.trim()) throw new Error(`${prefix} title cannot be blank`)
+  if (title.trim().length > MAX_EVENT_TITLE_LENGTH)
+    throw new Error(
+      `${prefix} title cannot exceed ${MAX_EVENT_TITLE_LENGTH} characters`,
+    )
   for (const key of ['timeZone', 'endTimeZone'] as const) {
     if (item[key] !== undefined) {
       const zone = requireString(item[key], `${prefix} ${key}`)
@@ -92,7 +102,7 @@ const parseEvent = (value: unknown, index: number): Event => {
 
   return {
     id: requireString(item.id, `${prefix} id`),
-    title: requireString(item.title, `${prefix} title`),
+    title: title.trim(),
     datetime: requireEventDate(item.datetime, `${prefix} datetime`),
     ...(endDate ? { endDate } : {}),
     ...(dateOnly === undefined ? {} : { dateOnly }),
@@ -123,8 +133,10 @@ const parseTag = (value: unknown, index: number): Tag => {
 
   const name = requireString(item.name, `${prefix} name`)
   if (!name.trim()) throw new Error(`${prefix} name cannot be blank`)
-  if (!item.system && name.trim().length > 50)
-    throw new Error(`${prefix} name cannot exceed 50 characters`)
+  if (!item.system && name.trim().length > MAX_TAG_NAME_LENGTH)
+    throw new Error(
+      `${prefix} name cannot exceed ${MAX_TAG_NAME_LENGTH} characters`,
+    )
   if (!item.system && name.includes(','))
     throw new Error(`${prefix} name cannot contain commas`)
 
