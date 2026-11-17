@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.3.0...track-time-v0.4.0) (2026-11-17)
+
+
+### Features
+
+* enhance validation and error feedback ([#77](https://github.com/faizanbardai/track-time/issues/77)) ([d3a9222](https://github.com/faizanbardai/track-time/commit/d3a9222b7eaef842f7cdb96ed60454cce881dd23))
+
 ## [0.3.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.2.0...track-time-v0.3.0) (2026-11-12)
 
 
