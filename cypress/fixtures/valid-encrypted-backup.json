@@ -1,0 +1,15 @@
+{
+  "format": "track-time-encrypted-backup",
+  "formatVersion": 1,
+  "backupSchemaVersion": 1,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "encryption": {
+    "kdf": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 310000,
+    "salt": "placeholder",
+    "cipher": "AES-GCM",
+    "iv": "placeholder"
+  },
+  "ciphertext": "placeholder"
+}

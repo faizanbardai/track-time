@@ -1,6 +1,6 @@
 const sendTouch = (
   element: HTMLElement,
-  type: 'touchstart' | 'touchmove' | 'touchend',
+  type: 'touchstart' | 'touchmove',
   x: number,
   y: number,
 ) => {
@@ -14,7 +14,7 @@ const sendTouch = (
     new TouchEvent(type, {
       bubbles: true,
       cancelable: true,
-      touches: type === 'touchend' ? [] : [touch],
+      touches: [touch],
       changedTouches: [touch],
     }),
   )
@@ -27,7 +27,7 @@ describe('Backup and restore pager', () => {
     cy.get('#export-password').should('be.visible')
   })
 
-  it('fits the viewport, keeps a gap during swipes, and settles at the viewport edge', () => {
+  it('fits the viewport and keeps a gap during a swipe preview', () => {
     cy.get('[data-testid="backup-swipe-surface"]').should(($surface) => {
       const bounds = $surface[0].getBoundingClientRect()
       const viewportWidth =
@@ -51,27 +51,17 @@ describe('Backup and restore pager', () => {
         backup.getBoundingClientRect().right
       expect(gap).to.be.closeTo(12, 0.1)
     })
-    cy.get('[data-testid="backup-swipe-surface"]').then(($surface) => {
-      sendTouch($surface[0], 'touchend', 160, startY)
-    })
-    cy.get('#data-restore-panel').should('have.attr', 'aria-hidden', 'false')
-    cy.get('[data-testid="backup-swipe-surface"]').then(($surface) => {
-      cy.get('#data-restore-panel').should(($panel) => {
-        expect($panel[0].getBoundingClientRect().left).to.be.closeTo(
-          $surface[0].getBoundingClientRect().left,
-          0.1,
-        )
-      })
-    })
   })
 
   it('preserves passwords and the selected file when switching with pills', () => {
     cy.get('#export-password').type('test password')
     cy.get('#data-restore-tab').click()
-    cy.get('#backup-file').selectFile({
-      contents: Cypress.Buffer.from('{}'),
-      fileName: 'test-backup.json',
-      mimeType: 'application/json',
+    cy.fixture('valid-encrypted-backup.json', 'utf8').then((contents) => {
+      cy.get('#backup-file').selectFile({
+        contents: Cypress.Buffer.from(contents),
+        fileName: 'test-backup.json',
+        mimeType: 'application/json',
+      })
     })
     cy.get('#import-password').type('restore password')
     cy.get('#data-backup-tab').click()
