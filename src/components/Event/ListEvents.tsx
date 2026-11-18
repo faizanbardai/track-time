@@ -19,10 +19,7 @@ import {
   UPCOMING_TAG_ID,
 } from '@/helpers/indexedDB'
 import type { EventWithTags } from '@/types/event'
-import {
-  filterUpcomingEvents,
-  sortEventsByNextAnniversary,
-} from '@/helpers/eventViews'
+import { getEventsForView } from '@/helpers/eventViews'
 import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { shouldRefreshSwipePreview } from './swipePreview'
@@ -31,10 +28,12 @@ export const PreviewPanel = ({
   events: sourceEvents,
   isSettling = false,
   activeTagId,
+  sortMode = 'asc',
 }: {
   events: EventWithTags[]
   isSettling?: boolean
   activeTagId?: string
+  sortMode?: 'user' | 'asc' | 'desc'
 }) => {
   const [events, setEvents] = useState(sourceEvents)
   useEffect(() => {
@@ -47,12 +46,15 @@ export const PreviewPanel = ({
     setPreviewNow(dayjs())
   }, [events])
 
-  const visibleEvents =
-    activeTagId === UPCOMING_TAG_ID
-      ? filterUpcomingEvents(events, clockNow)
-      : activeTagId === ANNIVERSARY_TAG_ID
-        ? sortEventsByNextAnniversary(events, clockNow)
-        : events
+  const visibleEvents = getEventsForView(
+    events,
+    {
+      upcoming: activeTagId === UPCOMING_TAG_ID,
+      anniversary: activeTagId === ANNIVERSARY_TAG_ID,
+      sortMode,
+    },
+    clockNow,
+  )
 
   return (
     <div className="grid min-h-full content-start gap-2">
@@ -90,6 +92,7 @@ const ListEventsContent = () => {
     handleDragEnd,
     canReorder,
     sortMode,
+    getSortMode,
     toggleSortMode,
     error,
   } = useListEvents()
@@ -126,6 +129,7 @@ const ListEventsContent = () => {
               events={eventsByTag[tagId] ?? []}
               activeTagId={tagId}
               isSettling={isSettling}
+              sortMode={getSortMode(tagId)}
             />
           ) : isEmptyAllView ? (
             <EmptyEvents />

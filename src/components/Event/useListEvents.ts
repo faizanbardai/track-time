@@ -22,11 +22,7 @@ import { useIndexedDB } from '@/components/providers/indexedDB'
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useActiveTag } from '@/components/Event/useActiveTag'
 import { useEventListClock } from '@/components/Event/EventListClock'
-import {
-  filterUpcomingEvents,
-  sortEventsByStartDate,
-  sortEventsByNextAnniversary,
-} from '@/helpers/eventViews'
+import { getEventsForView } from '@/helpers/eventViews'
 import { useLoadingActions } from '@/components/providers/loading'
 
 const UPCOMING_TAG: Tag = {
@@ -56,6 +52,7 @@ const defaultSortMode = (tagId: string): EventSortMode =>
     : 'user'
 
 const readSortMode = (tagId: string): EventSortMode => {
+  if (typeof window === 'undefined') return defaultSortMode(tagId)
   const value = window.localStorage.getItem(`${SORT_MODE_KEY}${tagId}`)
   if (value === 'asc' || value === 'desc' || value === 'user') return value
   return defaultSortMode(tagId)
@@ -89,21 +86,16 @@ export const useListEvents = () => {
     selectTag: persistActiveTag,
   } = useActiveTag(tags)
   const loadedEvents = eventsByTag[activeTagId] ?? []
-  const filteredEvents =
-    activeTagId === UPCOMING_TAG_ID
-      ? filterUpcomingEvents(loadedEvents, now)
-      : loadedEvents
   const sortMode = sortModes[activeTagId] ?? defaultSortMode(activeTagId)
-  const events =
-    activeTagId === ANNIVERSARY_TAG_ID
-      ? sortEventsByNextAnniversary(
-          filteredEvents,
-          now,
-          sortMode === 'desc' ? 'desc' : 'asc',
-        )
-      : sortMode === 'user'
-        ? filteredEvents
-        : sortEventsByStartDate(filteredEvents, sortMode)
+  const events = getEventsForView(
+    loadedEvents,
+    {
+      upcoming: activeTagId === UPCOMING_TAG_ID,
+      anniversary: activeTagId === ANNIVERSARY_TAG_ID,
+      sortMode,
+    },
+    now,
+  )
 
   useEffect(() => {
     if (dbError) {
@@ -299,6 +291,8 @@ export const useListEvents = () => {
       sortMode === 'user',
     handleDragEnd,
     sortMode,
+    sortModes,
+    getSortMode: (tagId: string) => sortModes[tagId] ?? readSortMode(tagId),
     toggleSortMode,
   }
 }

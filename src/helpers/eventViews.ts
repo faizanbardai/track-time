@@ -48,3 +48,31 @@ export const sortEventsByNextAnniversary = (
       )
     })
     .map(({ event }) => event)
+
+export const getEventsForView = (
+  events: EventWithTags[],
+  {
+    upcoming = false,
+    anniversary = false,
+    sortMode,
+  }: {
+    upcoming?: boolean
+    anniversary?: boolean
+    sortMode: 'user' | 'asc' | 'desc'
+  },
+  now: Dayjs,
+) => {
+  const filteredEvents = upcoming ? filterUpcomingEvents(events, now) : events
+
+  if (anniversary) {
+    return sortEventsByNextAnniversary(
+      filteredEvents,
+      now,
+      sortMode === 'desc' ? 'desc' : 'asc',
+    )
+  }
+
+  return sortMode === 'user'
+    ? filteredEvents
+    : sortEventsByStartDate(filteredEvents, sortMode)
+}
