@@ -1,8 +1,6 @@
-import { Clock3, Plus } from 'lucide-react'
-import { OfflineAwareLink } from '@/components/OfflineAwareLink'
+import { Clock3 } from 'lucide-react'
 import { ALL_TAG_ID, UPCOMING_TAG_ID } from '@/helpers/indexedDB'
 import { Button } from '@/components/ui/button'
-import { PATHS } from '@/constants/paths'
 import type { Tag } from '@/types/event'
 import { useActiveTagPeek } from '@/components/Event/useActiveTagPeek'
 import { cn } from '@/lib/utils'
@@ -90,25 +88,9 @@ export const EventBottomBar = ({
     ({ id }) => id !== ALL_TAG_ID && id !== UPCOMING_TAG_ID,
   )
   const tagScrollerRef = useActiveTagPeek(activeTagId)
-  const selectedTag = customTags.find(({ id }) => id === activeTagId)
-  const newEventPath = selectedTag
-    ? `${PATHS.EVENT}?${new URLSearchParams({ tag: selectedTag.id })}`
-    : PATHS.EVENT
 
   return (
     <BottomBar className="max-w-[1184px]">
-      <Button
-        asChild
-        size="icon"
-        className="absolute right-2 bottom-16 z-10 size-14 rounded-full shadow-lg"
-        aria-label="Add new entry"
-        title="Add new entry"
-      >
-        <OfflineAwareLink href={newEventPath}>
-          <Plus aria-hidden="true" className="size-6" />
-        </OfflineAwareLink>
-      </Button>
-
       <nav aria-label="Filter events by tag">
         <BottomPill>
           {allTag && (

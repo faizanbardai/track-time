@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, Menu } from 'lucide-react'
+import { ChevronRight, Menu, Plus } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Button } from '@/components/ui/button'
@@ -73,6 +73,32 @@ export const AppHeader = () => {
               </ol>
             )}
           </nav>
+          {pathname === PATHS.HOME && (
+            <Button
+              asChild
+              size="sm"
+              variant="ghost"
+              className="group h-11 min-w-11 shrink-0 rounded-full px-1 py-0 hover:bg-transparent dark:hover:bg-transparent"
+              aria-label="Create new event"
+              title="Create new event"
+            >
+              <OfflineAwareLink
+                href={
+                  breadcrumb.createEventTagId
+                    ? `${PATHS.EVENT}?${new URLSearchParams({
+                        tag: breadcrumb.createEventTagId,
+                      })}`
+                    : PATHS.EVENT
+                }
+              >
+                <span className="inline-flex h-8 items-center gap-2 rounded-full bg-primary px-3 text-primary-foreground shadow-xs transition-colors group-hover:bg-primary/90">
+                  <Plus aria-hidden="true" className="size-4" />
+                  <span className="sm:hidden">Create</span>
+                  <span className="hidden sm:inline">Create new event</span>
+                </span>
+              </OfflineAwareLink>
+            </Button>
+          )}
         </Container>
       </header>
       <AppDrawer

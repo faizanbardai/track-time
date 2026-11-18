@@ -27,6 +27,7 @@ export const useHeaderBreadcrumb = (pathname: string) => {
       : null
   })
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -36,13 +37,16 @@ export const useHeaderBreadcrumb = (pathname: string) => {
       const requestVersion = ++updateVersion
       if (pathname !== PATHS.HOME || !tagId) {
         setSelectedTag(null)
+        setSelectedTagId(null)
         return
       }
       if (tagId === UPCOMING_TAG_ID) {
         setSelectedTag(NAVIGATION_LABELS.upcoming)
+        setSelectedTagId(null)
         return
       }
       setSelectedTag(null)
+      setSelectedTagId(null)
       if (!dbReady) return
 
       db.tags
@@ -50,11 +54,13 @@ export const useHeaderBreadcrumb = (pathname: string) => {
         .then((tag) => {
           if (!cancelled && requestVersion === updateVersion) {
             setSelectedTag(tag?.name ?? null)
+            setSelectedTagId(tag && !tag.system ? tag.id : null)
           }
         })
         .catch(() => {
           if (!cancelled && requestVersion === updateVersion) {
             setSelectedTag(null)
+            setSelectedTagId(null)
           }
         })
     }
@@ -106,6 +112,7 @@ export const useHeaderBreadcrumb = (pathname: string) => {
     return {
       label: selectedTag ?? NAVIGATION_LABELS.events,
       hasParent: selectedTag !== null,
+      createEventTagId: selectedTagId,
     }
   }
 
@@ -115,5 +122,6 @@ export const useHeaderBreadcrumb = (pathname: string) => {
         ? eventTitle.title
         : getPageTitle(pathname),
     hasParent: true,
+    createEventTagId: null,
   }
 }
