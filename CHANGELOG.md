@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.5.0...track-time-v0.6.0) (2026-11-18)
+
+
+### Features
+
+* sort event by start date for All view ([#82](https://github.com/faizanbardai/track-time/issues/82)) ([3fb2b1d](https://github.com/faizanbardai/track-time/commit/3fb2b1d04d4a5cde572ac87174efa309819ed062))
+
 ## [0.5.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.4.0...track-time-v0.5.0) (2026-11-18)
 
 
