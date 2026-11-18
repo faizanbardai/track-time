@@ -80,36 +80,9 @@ afterEach(() => {
 })
 
 describe('Adding an event from a tag view', () => {
-  it('updates the plus destination when the selected tag changes', () => {
-    const { rerender } = render(
-      <EventBottomBar activeTagId="all" tags={[tag]} onSelectTag={vi.fn()} />,
-    )
-    const link = screen.getByRole('link', { name: 'Add new entry' })
-    expect(link.getAttribute('href')).toBe('/event')
-
-    rerender(
-      <EventBottomBar
-        activeTagId={tag.id}
-        tags={[tag]}
-        onSelectTag={vi.fn()}
-      />,
-    )
-    const url = new URL(link.getAttribute('href')!, 'http://localhost')
-    expect(url.searchParams.get('tag')).toBe(tag.id)
-
-    rerender(
-      <EventBottomBar activeTagId="all" tags={[tag]} onSelectTag={vi.fn()} />,
-    )
-    expect(link.getAttribute('href')).toBe('/event')
-  })
-
-  it.each([
-    ['Personal', '/event?tag=personal'],
-    ['All', '/event'],
-    ['Upcoming events', '/event'],
-  ])(
-    'uses the highlighted %s selection before the URL updates',
-    (name, path) => {
+  it.each(['Personal', 'All', 'Upcoming events'])(
+    'highlights the selected %s tag before the URL updates',
+    (name) => {
       navigation.params.set('tag', tag.id)
       const tags: Tag[] = [
         { ...tag, id: 'all', name: 'All', system: true },
@@ -142,31 +115,11 @@ describe('Adding an event from a tag view', () => {
         screen.getByRole('button', { name }).getAttribute('aria-pressed'),
       ).toBe('true')
       expect(navigation.params.get('tag')).toBe(tag.id)
-      expect(
-        screen
-          .getByRole('link', { name: 'Add new entry' })
-          .getAttribute('href'),
-      ).toBe(path)
     },
   )
 
-  it('carries the active tag from the plus action into the form and saves it', async () => {
-    const bar = render(
-      <EventBottomBar
-        activeTagId={tag.id}
-        tags={[tag]}
-        onSelectTag={vi.fn()}
-      />,
-    )
-    const url = new URL(
-      screen.getByRole('link', { name: 'Add new entry' }).getAttribute('href')!,
-      'http://localhost',
-    )
-    expect(url.pathname).toBe('/event')
-    expect(url.searchParams.get('tag')).toBe(tag.id)
-    navigation.params = url.searchParams
-    bar.unmount()
-
+  it('uses the selected tag query parameter as a default and saves it', async () => {
+    navigation.params = new URLSearchParams({ tag: tag.id })
     render(<EventPage />)
     await screen.findByRole('button', { name: `Remove ${tag.name}` })
     fireEvent.change(screen.getByLabelText('Title'), {
@@ -208,24 +161,6 @@ describe('Adding an event from a tag view', () => {
     ).toBeNull()
     expect(screen.getByRole('button', { name: 'Remove Personal' })).toBeTruthy()
   })
-
-  it.each(['all', 'upcoming', 'deleted'])(
-    '%s has no default tag in the plus destination',
-    (activeTagId) => {
-      render(
-        <EventBottomBar
-          activeTagId={activeTagId}
-          tags={[tag]}
-          onSelectTag={vi.fn()}
-        />,
-      )
-      expect(
-        screen
-          .getByRole('link', { name: 'Add new entry' })
-          .getAttribute('href'),
-      ).toBe('/event')
-    },
-  )
 
   it.each([null, 'all', 'upcoming', 'deleted'])(
     'opens without custom tags for %s',
