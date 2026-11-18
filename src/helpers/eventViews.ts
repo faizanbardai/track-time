@@ -1,5 +1,9 @@
 import dayjs, { type Dayjs } from 'dayjs'
 import type { Event, EventWithTags } from '@/types/event'
+import {
+  getNextAnniversaryOccurrence,
+  hasAnniversaryEnabled,
+} from '@/helpers/datetime/anniversary'
 
 export const isUpcomingOrOngoingEvent = (event: Event, now: Dayjs) => {
   const nowTimestamp = now.valueOf()
@@ -17,7 +21,30 @@ export const filterUpcomingEvents = (events: EventWithTags[], now: Dayjs) =>
 
 export const sortEventsByStartDate = <T extends Pick<Event, 'datetime'>>(
   events: T[],
+  direction: 'asc' | 'desc' = 'asc',
 ) =>
   [...events].sort(
-    (a, b) => dayjs(a.datetime).valueOf() - dayjs(b.datetime).valueOf(),
+    (a, b) =>
+      (dayjs(a.datetime).valueOf() - dayjs(b.datetime).valueOf()) *
+      (direction === 'asc' ? 1 : -1),
   )
+
+export const sortEventsByNextAnniversary = (
+  events: EventWithTags[],
+  now: Dayjs,
+  direction: 'asc' | 'desc' = 'asc',
+) =>
+  events
+    .filter(hasAnniversaryEnabled)
+    .map((event, index) => ({
+      event,
+      index,
+      nextAnniversary: getNextAnniversaryOccurrence(event, now).valueOf(),
+    }))
+    .sort((first, second) => {
+      const delta = first.nextAnniversary - second.nextAnniversary
+      return (
+        (direction === 'asc' ? delta : -delta) || first.index - second.index
+      )
+    })
+    .map(({ event }) => event)

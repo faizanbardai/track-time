@@ -32,6 +32,7 @@ vi.mock('@/helpers/indexedDB', () => ({
   db: { tags: { get: getTag } },
   getCachedEvent: () => null,
   getEvent: vi.fn(async () => null),
+  ANNIVERSARY_TAG_ID: 'anniversary',
   UPCOMING_TAG_ID: 'upcoming',
 }))
 vi.mock('next-themes', () => ({
@@ -114,7 +115,7 @@ describe('AppHeader navigation drawer', () => {
     })
   })
 
-  it.each(['all', 'upcoming'])(
+  it.each(['all', 'upcoming', 'anniversary'])(
     'does not add a default tag for the %s filter',
     async (tagId) => {
       vi.useRealTimers()

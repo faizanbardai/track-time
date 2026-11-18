@@ -5,6 +5,7 @@ import { PATHS } from '@/constants/paths'
 import { getPageTitle, NAVIGATION_LABELS } from '@/constants/navigation'
 import {
   db,
+  ANNIVERSARY_TAG_ID,
   getCachedEvent,
   getEvent,
   UPCOMING_TAG_ID,
@@ -42,6 +43,11 @@ export const useHeaderBreadcrumb = (pathname: string) => {
       }
       if (tagId === UPCOMING_TAG_ID) {
         setSelectedTag(NAVIGATION_LABELS.upcoming)
+        setSelectedTagId(null)
+        return
+      }
+      if (tagId === ANNIVERSARY_TAG_ID) {
+        setSelectedTag('Anniversary')
         setSelectedTagId(null)
         return
       }
