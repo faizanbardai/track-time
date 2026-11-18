@@ -14,3 +14,10 @@ export const isUpcomingOrOngoingEvent = (event: Event, now: Dayjs) => {
 
 export const filterUpcomingEvents = (events: EventWithTags[], now: Dayjs) =>
   events.filter((event) => isUpcomingOrOngoingEvent(event, now))
+
+export const sortEventsByStartDate = <T extends Pick<Event, 'datetime'>>(
+  events: T[],
+) =>
+  [...events].sort(
+    (a, b) => dayjs(a.datetime).valueOf() - dayjs(b.datetime).valueOf(),
+  )

@@ -8,6 +8,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core'
 import {
+  ALL_TAG_ID,
   DATA_CHANGED_EVENT,
   listEventsByTag,
   listUpcomingEvents,
@@ -20,7 +21,10 @@ import { useIndexedDB } from '@/components/providers/indexedDB'
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useActiveTag } from '@/components/Event/useActiveTag'
 import { useEventListClock } from '@/components/Event/EventListClock'
-import { filterUpcomingEvents } from '@/helpers/eventViews'
+import {
+  filterUpcomingEvents,
+  sortEventsByStartDate,
+} from '@/helpers/eventViews'
 import { useLoadingActions } from '@/components/providers/loading'
 
 const UPCOMING_TAG: Tag = {
@@ -32,9 +36,11 @@ const UPCOMING_TAG: Tag = {
 }
 
 const listEventsForTag = (tagId: string) => {
-  return tagId === UPCOMING_TAG_ID
-    ? listUpcomingEvents()
-    : listEventsByTag(tagId)
+  if (tagId === UPCOMING_TAG_ID) return listUpcomingEvents()
+  if (tagId === ALL_TAG_ID) {
+    return listEventsByTag(tagId).then(sortEventsByStartDate)
+  }
+  return listEventsByTag(tagId)
 }
 
 export const useListEvents = () => {
@@ -224,7 +230,7 @@ export const useListEvents = () => {
     sensors,
     tags,
     selectTag,
-    canReorder: activeTagId !== UPCOMING_TAG_ID,
+    canReorder: activeTagId !== ALL_TAG_ID && activeTagId !== UPCOMING_TAG_ID,
     handleDragEnd,
   }
 }

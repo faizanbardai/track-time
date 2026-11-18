@@ -1,5 +1,8 @@
 import dayjs from 'dayjs'
-import { isUpcomingOrOngoingEvent } from '@/helpers/eventViews'
+import {
+  isUpcomingOrOngoingEvent,
+  sortEventsByStartDate,
+} from '@/helpers/eventViews'
 import Dexie, { type Table } from 'dexie'
 import { v4 as uuid } from 'uuid'
 import type {
@@ -413,11 +416,12 @@ export const listEventsByTag = async (
 export const listUpcomingEvents = async (
   now = new Date(),
 ): Promise<EventWithTags[]> => {
-  const events = (await db.events.toArray())
-    .filter((event) => isUpcomingOrOngoingEvent(event, dayjs(now)))
-    .sort((a, b) => dayjs(a.datetime).valueOf() - dayjs(b.datetime).valueOf())
+  const events = (await db.events.toArray()).filter((event) =>
+    isUpcomingOrOngoingEvent(event, dayjs(now)),
+  )
+  const sortedEvents = sortEventsByStartDate(events)
 
-  return attachTagsToEvents(events)
+  return attachTagsToEvents(sortedEvents)
 }
 
 export const getEvent = async (
