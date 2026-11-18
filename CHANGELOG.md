@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.4.0...track-time-v0.5.0) (2026-11-18)
+
+
+### Features
+
+* enhance event creation and tag handling in AppHeader and EventBottomBar ([#80](https://github.com/faizanbardai/track-time/issues/80)) ([0572873](https://github.com/faizanbardai/track-time/commit/057287316b06172a735de75ca26a06dbcc4bdf84))
+
 ## [0.4.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.3.0...track-time-v0.4.0) (2026-11-17)
 
 
