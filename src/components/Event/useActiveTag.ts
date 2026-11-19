@@ -39,7 +39,10 @@ export const useActiveTag = (tags: Tag[]) => {
 
     setActiveTagId(nextTagId)
     setSelectionReady(true)
-    dispatchActiveTagChange(nextTagId === ALL_TAG_ID ? null : nextTagId)
+    dispatchActiveTagChange(
+      nextTagId === ALL_TAG_ID ? null : nextTagId,
+      tags.find((tag) => tag.id === nextTagId)?.name,
+    )
 
     if (nextTagId === ALL_TAG_ID) {
       window.localStorage.removeItem(ACTIVE_TAG_STORAGE_KEY)
@@ -62,7 +65,10 @@ export const useActiveTag = (tags: Tag[]) => {
   const selectTag = useCallback(
     (tagId: string) => {
       setActiveTagId(tagId)
-      dispatchActiveTagChange(tagId === ALL_TAG_ID ? null : tagId)
+      dispatchActiveTagChange(
+        tagId === ALL_TAG_ID ? null : tagId,
+        tags.find((tag) => tag.id === tagId)?.name,
+      )
 
       if (tagId === ALL_TAG_ID) {
         window.localStorage.removeItem(ACTIVE_TAG_STORAGE_KEY)
@@ -80,7 +86,7 @@ export const useActiveTag = (tags: Tag[]) => {
       const query = nextSearchParams.toString()
       replaceUrl(query ? `${pathname}?${query}` : pathname)
     },
-    [pathname, replaceUrl, searchParams],
+    [pathname, replaceUrl, searchParams, tags],
   )
 
   return {
