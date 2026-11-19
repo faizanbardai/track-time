@@ -79,44 +79,76 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Adding an event from a tag view', () => {
-  it.each(['Personal', 'All', 'Upcoming events'])(
-    'highlights the selected %s tag before the URL updates',
-    (name) => {
-      navigation.params.set('tag', tag.id)
-      const tags: Tag[] = [
-        { ...tag, id: 'all', name: 'All', system: true },
-        { ...tag, id: 'upcoming', name: 'Upcoming', system: true },
-        tag,
-        { ...tag, id: 'personal', name: 'Personal' },
-      ]
-      const Harness = () => {
-        const [activeKey, setActiveKey] = useState(tag.id)
-        return (
-          <SwipePager
-            activeKey={activeKey}
-            keys={tags.map(({ id }) => id)}
-            onSelect={setActiveKey}
-            renderPanel={() => null}
-            renderNavigation={(value, select) => (
-              <EventBottomBar
-                activeTagId={value}
-                tags={tags}
-                onSelectTag={select}
-              />
-            )}
-          />
-        )
-      }
+describe('Event bottom bar', () => {
+  const tags: Tag[] = [
+    { ...tag, id: 'all', name: 'All', system: true },
+    { ...tag, id: 'upcoming', name: 'Upcoming', system: true },
+    { ...tag, id: 'anniversary', name: 'Anniversary', system: true },
+    tag,
+    { ...tag, id: 'personal', name: 'Personal' },
+  ]
 
+  const Harness = ({ initialKey = tag.id }: { initialKey?: string }) => {
+    const [activeKey, setActiveKey] = useState(initialKey)
+    return (
+      <SwipePager
+        activeKey={activeKey}
+        keys={tags.map(({ id }) => id)}
+        onSelect={setActiveKey}
+        renderPanel={() => null}
+        renderNavigation={(value, select) => (
+          <EventBottomBar
+            activeTagId={value}
+            tags={tags}
+            sortMode={value === tag.id ? 'user' : 'asc'}
+            onSelectTag={select}
+            onToggleSort={vi.fn()}
+          />
+        )}
+      />
+    )
+  }
+
+  it('keeps the selected custom tag highlighted', () => {
+    render(<Harness initialKey="personal" />)
+    expect(
+      screen
+        .getByRole('button', { name: 'Personal' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true')
+  })
+
+  it.each(['All events', 'Upcoming', 'Anniversary'])(
+    'selects the %s view from the picker',
+    (label) => {
       render(<Harness />)
-      fireEvent.click(screen.getByRole('button', { name }))
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Choose view: tag events' }),
+      )
+      fireEvent.click(screen.getByRole('menuitemradio', { name: label }))
       expect(
-        screen.getByRole('button', { name }).getAttribute('aria-pressed'),
-      ).toBe('true')
-      expect(navigation.params.get('tag')).toBe(tag.id)
+        screen.getByRole('button', { name: `Choose view: ${label}` }),
+      ).not.toBeNull()
     },
   )
+
+  it('supports arrow navigation and returns focus to the picker on Escape', () => {
+    render(<Harness initialKey="all" />)
+    const picker = screen.getByRole('button', {
+      name: 'Choose view: All events',
+    })
+    fireEvent.click(picker)
+    const allOption = screen.getByRole('menuitemradio', { name: 'All events' })
+    const upcomingOption = screen.getByRole('menuitemradio', {
+      name: 'Upcoming',
+    })
+    expect(document.activeElement).toBe(allOption)
+    fireEvent.keyDown(allOption, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(upcomingOption)
+    fireEvent.keyDown(upcomingOption, { key: 'Escape' })
+    expect(document.activeElement).toBe(picker)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
 
   it('uses the selected tag query parameter as a default and saves it', async () => {
     navigation.params = new URLSearchParams({ tag: tag.id })

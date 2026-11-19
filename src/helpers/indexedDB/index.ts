@@ -24,6 +24,7 @@ export type EventDraft = Omit<Event, 'createdAt' | 'updatedAt'> &
 
 export const ALL_TAG_ID = 'all'
 export const UPCOMING_TAG_ID = 'upcoming'
+export const ANNIVERSARY_TAG_ID = 'anniversary'
 export const DATA_CHANGED_EVENT = 'track-time:data-changed'
 
 const eventCache = new Map<string, EventWithTags>()

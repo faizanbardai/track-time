@@ -4,14 +4,24 @@ import CreateOrUpdateEvent from '@/components/Event/CreateOrUpdateEvent'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useIndexedDB } from '@/components/providers/indexedDB'
-import { ALL_TAG_ID, UPCOMING_TAG_ID, db } from '@/helpers/indexedDB'
+import {
+  ALL_TAG_ID,
+  ANNIVERSARY_TAG_ID,
+  UPCOMING_TAG_ID,
+  db,
+} from '@/helpers/indexedDB'
 
 const NewEventForm = ({ tagId }: { tagId: string | null }) => {
   const { dbReady, dbError } = useIndexedDB()
   const [defaultTags, setDefaultTags] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const customTagId =
-    tagId && tagId !== ALL_TAG_ID && tagId !== UPCOMING_TAG_ID ? tagId : null
+    tagId &&
+    tagId !== ALL_TAG_ID &&
+    tagId !== UPCOMING_TAG_ID &&
+    tagId !== ANNIVERSARY_TAG_ID
+      ? tagId
+      : null
 
   useEffect(() => {
     if (!customTagId || !dbReady) return

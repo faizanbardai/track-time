@@ -13,9 +13,13 @@ import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
 import { EmptyEvents } from '@/components/Event/EmptyEvents'
 import { SwipePager } from '@/components/ui/SwipePager'
-import { ALL_TAG_ID, UPCOMING_TAG_ID } from '@/helpers/indexedDB'
+import {
+  ALL_TAG_ID,
+  ANNIVERSARY_TAG_ID,
+  UPCOMING_TAG_ID,
+} from '@/helpers/indexedDB'
 import type { EventWithTags } from '@/types/event'
-import { filterUpcomingEvents } from '@/helpers/eventViews'
+import { getEventsForView } from '@/helpers/eventViews'
 import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { shouldRefreshSwipePreview } from './swipePreview'
@@ -24,10 +28,12 @@ export const PreviewPanel = ({
   events: sourceEvents,
   isSettling = false,
   activeTagId,
+  sortMode = 'asc',
 }: {
   events: EventWithTags[]
   isSettling?: boolean
   activeTagId?: string
+  sortMode?: 'user' | 'asc' | 'desc'
 }) => {
   const [events, setEvents] = useState(sourceEvents)
   useEffect(() => {
@@ -40,10 +46,15 @@ export const PreviewPanel = ({
     setPreviewNow(dayjs())
   }, [events])
 
-  const visibleEvents =
-    activeTagId === UPCOMING_TAG_ID
-      ? filterUpcomingEvents(events, clockNow)
-      : events
+  const visibleEvents = getEventsForView(
+    events,
+    {
+      upcoming: activeTagId === UPCOMING_TAG_ID,
+      anniversary: activeTagId === ANNIVERSARY_TAG_ID,
+      sortMode,
+    },
+    clockNow,
+  )
 
   return (
     <div className="grid min-h-full content-start gap-2">
@@ -80,6 +91,9 @@ const ListEventsContent = () => {
     selectTag,
     handleDragEnd,
     canReorder,
+    sortMode,
+    getSortMode,
+    toggleSortMode,
     error,
   } = useListEvents()
   if (initialLoading) {
@@ -87,6 +101,8 @@ const ListEventsContent = () => {
   }
   const isEmptyAllView =
     activeTagId === ALL_TAG_ID && events.length === 0 && !error
+  const isEmptyAnniversaryView =
+    activeTagId === ANNIVERSARY_TAG_ID && events.length === 0 && !error
 
   return (
     <div
@@ -113,9 +129,15 @@ const ListEventsContent = () => {
               events={eventsByTag[tagId] ?? []}
               activeTagId={tagId}
               isSettling={isSettling}
+              sortMode={getSortMode(tagId)}
             />
           ) : isEmptyAllView ? (
             <EmptyEvents />
+          ) : isEmptyAnniversaryView ? (
+            <p className="mx-auto max-w-sm px-4 py-12 text-center text-sm text-muted-foreground">
+              No anniversaries yet. Enable “Show progress to next anniversary”
+              on an event to see it here.
+            </p>
           ) : canReorder ? (
             <DndContext
               sensors={sensors}
@@ -138,7 +160,9 @@ const ListEventsContent = () => {
             <EventBottomBar
               activeTagId={value}
               tags={tags}
+              sortMode={sortMode}
               onSelectTag={select}
+              onToggleSort={toggleSortMode}
             />
           )
         }

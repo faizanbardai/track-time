@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
-import { filterUpcomingEvents } from './eventViews'
+import { filterUpcomingEvents, sortEventsByNextAnniversary } from './eventViews'
 import type { EventWithTags } from '@/types/event'
 
 const createEvent = (id: string, datetime: string): EventWithTags => ({
@@ -68,5 +68,44 @@ describe('filterUpcomingEvents', () => {
         ({ id }) => id,
       ),
     ).toEqual([])
+  })
+})
+
+describe('sortEventsByNextAnniversary', () => {
+  const anniversary = (id: string, date: string): EventWithTags => ({
+    ...createEvent(id, date),
+    dateOnly: true,
+    anniversaryProgressEnabled: true,
+  })
+
+  it('sorts enabled anniversaries by their next occurrence and excludes others', () => {
+    const events = [
+      anniversary('later', '2000-07-01'),
+      anniversary('passed', '2000-05-01'),
+      anniversary('soon', '2000-06-12'),
+      createEvent('disabled', '2000-06-11'),
+    ]
+    const now = dayjs('2026-06-10T12:00:00')
+
+    expect(
+      sortEventsByNextAnniversary(events, now).map(({ id }) => id),
+    ).toEqual(['soon', 'later', 'passed'])
+    expect(
+      sortEventsByNextAnniversary(events, now, 'desc').map(({ id }) => id),
+    ).toEqual(['passed', 'later', 'soon'])
+  })
+
+  it('supports the legacy single-date anniversary preference', () => {
+    const legacy = {
+      ...createEvent('legacy', '2000-06-12'),
+      dateOnly: true,
+      progressEnabled: true,
+    }
+
+    expect(
+      sortEventsByNextAnniversary([legacy], dayjs('2026-06-10')).map(
+        ({ id }) => id,
+      ),
+    ).toEqual(['legacy'])
   })
 })
