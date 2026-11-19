@@ -34,7 +34,7 @@ export const useHeaderBreadcrumb = (pathname: string) => {
     let cancelled = false
     let updateVersion = 0
 
-    const updateTag = (tagId: string | null) => {
+    const updateTag = (tagId: string | null, tagName?: string) => {
       const requestVersion = ++updateVersion
       if (pathname !== PATHS.HOME || !tagId) {
         setSelectedTag(null)
@@ -49,6 +49,11 @@ export const useHeaderBreadcrumb = (pathname: string) => {
       if (tagId === ANNIVERSARY_TAG_ID) {
         setSelectedTag('Anniversary')
         setSelectedTagId(null)
+        return
+      }
+      if (tagName !== undefined) {
+        setSelectedTag(tagName)
+        setSelectedTagId(tagId)
         return
       }
       setSelectedTag(null)

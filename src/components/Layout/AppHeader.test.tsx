@@ -169,6 +169,20 @@ describe('AppHeader navigation drawer', () => {
     )
   })
 
+  it('updates custom tag breadcrumbs immediately when the tag name is known', () => {
+    databaseReady.value = true
+    render(<AppHeader />)
+
+    act(() => dispatchActiveTagChange('work', 'Work'))
+    expect(screen.getByText('Work').getAttribute('aria-current')).toBe('page')
+    expect(getTag).not.toHaveBeenCalled()
+
+    act(() => dispatchActiveTagChange('travel', 'Travel'))
+    expect(screen.getByText('Travel').getAttribute('aria-current')).toBe('page')
+    expect(getTag).not.toHaveBeenCalled()
+    expect(screen.getByRole('link', { name: 'Events' })).toBeTruthy()
+  })
+
   it('opens the modal drawer and closes it from the close button', () => {
     render(<AppHeader />)
 
