@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.6.0...track-time-v0.7.0) (2026-11-19)
+
+
+### Features
+
+* add event views and sorting controls to the event list ([#85](https://github.com/faizanbardai/track-time/issues/85)) ([9e834b7](https://github.com/faizanbardai/track-time/commit/9e834b7a86c481c182747e6c4ddb6df658c14e3f))
+
 ## [0.6.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.5.0...track-time-v0.6.0) (2026-11-18)
 
 
