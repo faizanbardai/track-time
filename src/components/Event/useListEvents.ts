@@ -22,7 +22,7 @@ import { useIndexedDB } from '@/components/providers/indexedDB'
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useActiveTag } from '@/components/Event/useActiveTag'
 import { useEventListClock } from '@/components/Event/EventListClock'
-import { getEventsForView } from '@/helpers/eventViews'
+import { getEventsForView, sortEventsByStartDate } from '@/helpers/eventViews'
 import { useLoadingActions } from '@/components/providers/loading'
 
 const UPCOMING_TAG: Tag = {
