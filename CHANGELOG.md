@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.7.0...track-time-v0.8.0) (2026-11-19)
+
+
+### Features
+
+* enhance active tag change handling with tag names and update related components ([#87](https://github.com/faizanbardai/track-time/issues/87)) ([b33c268](https://github.com/faizanbardai/track-time/commit/b33c2685dc215ba9601dbcc39348795e3b82f861))
+
 ## [0.7.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.6.0...track-time-v0.7.0) (2026-11-19)
 
 
