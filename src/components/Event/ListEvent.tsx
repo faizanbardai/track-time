@@ -10,7 +10,7 @@ import { EventWithTags } from '@/types/event'
 import dayjs, { Dayjs } from 'dayjs'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { cacheEvent } from '@/helpers/indexedDB'
 import { useSettings } from '@/components/providers/settings'
 
@@ -23,31 +23,29 @@ interface ListEventProps {
   interactive?: boolean
 }
 
-const LiveListEvent = (props: EventPageCardProps) => {
-  const now = useEventListClock()
-  return <EventCard {...props} now={now} />
-}
-
-type EventPageCardProps = Omit<ListEventProps, 'liveCounter'>
-
-export const ListEvent = ({ liveCounter, ...props }: ListEventProps) =>
-  liveCounter ? <LiveListEvent {...props} /> : <EventCard {...props} />
+export const ListEvent = ({ liveCounter, ...props }: ListEventProps) => (
+  <EventCard {...props} liveCounter={liveCounter} />
+)
 
 const EventCard = ({
   event,
   now,
+  liveCounter = false,
   draggable = false,
   activeTagId,
   interactive = true,
-}: EventPageCardProps) => {
+}: ListEventProps) => {
   const router = useRouter()
   const { timeFormat } = useSettings()
-  const displayEventDatetime = formatEventCardDate(event, undefined, timeFormat)
-  const displayDuration = getEventDurationLabel(event)
-  const displayTags = event.tags.filter(
-    (tag) => !tag.system && tag.id !== activeTagId,
+  const displayEventDatetime = useMemo(
+    () => formatEventCardDate(event, undefined, timeFormat),
+    [event, timeFormat],
   )
-  const progressDetails = calculateEventProgressDetails(event, now ?? dayjs())
+  const displayDuration = useMemo(() => getEventDurationLabel(event), [event])
+  const displayTags = useMemo(
+    () => event.tags.filter((tag) => !tag.system && tag.id !== activeTagId),
+    [activeTagId, event.tags],
+  )
   const eventPath = `/event/${event.id}`
 
   const handleClick = () => {
@@ -82,9 +80,15 @@ const EventCard = ({
           <CardTitle className="min-w-0 max-w-full flex-auto line-clamp-2 break-words text-base font-medium leading-snug sm:text-lg">
             {event.title}
           </CardTitle>
-          <div className="ml-auto max-w-full shrink-0 text-right text-2xl font-semibold leading-tight tabular-nums tracking-tight text-timer sm:text-3xl">
-            {now ? <Counter event={event} now={now} /> : null}
-          </div>
+          {liveCounter ? (
+            <LiveEventCounter event={event} />
+          ) : (
+            now && (
+              <div className="ml-auto max-w-full shrink-0 text-right text-2xl font-semibold leading-tight tabular-nums tracking-tight text-timer sm:text-3xl">
+                <Counter event={event} now={now} />
+              </div>
+            )
+          )}
         </div>
         <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-3 gap-y-1.5">
           <div className="min-w-0 max-w-full flex-auto break-words text-xs leading-relaxed text-foreground/70 sm:text-sm">
@@ -106,33 +110,64 @@ const EventCard = ({
             </div>
           )}
         </div>
-        {progressDetails && (
-          <div className="grid gap-1.5 border-t border-border/60 pt-2 sm:gap-2 sm:pt-3">
-            <div className="flex items-center gap-2 text-xs text-foreground/70">
-              <span>{progressDetails.targetDate ?? progressDetails.label}</span>
-              <span aria-hidden="true">|</span>
-              <span className="shrink-0 tabular-nums">
-                {progressDetails.percent}%
-              </span>
-            </div>
-            <div
-              aria-label={progressDetails.description}
-              className="h-1 sm:h-1.5 w-full overflow-hidden rounded-full bg-muted"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={progressDetails.percent}
-            >
-              <div
-                aria-hidden="true"
-                className="h-full rounded-full bg-primary transition-[width] duration-500 motion-reduce:transition-none"
-                style={{ width: `${progressDetails.progress * 100}%` }}
-              />
-            </div>
-          </div>
+        {liveCounter ? (
+          <LiveEventProgress event={event} />
+        ) : (
+          <EventProgress event={event} now={now ?? dayjs()} />
         )}
       </div>
     </Card>
+  )
+}
+
+const LiveEventCounter = ({ event }: { event: EventWithTags }) => {
+  const now = useEventListClock()
+  return (
+    <div className="ml-auto max-w-full shrink-0 text-right text-2xl font-semibold leading-tight tabular-nums tracking-tight text-timer sm:text-3xl">
+      <Counter event={event} now={now} />
+    </div>
+  )
+}
+
+const LiveEventProgress = ({ event }: { event: EventWithTags }) => {
+  const now = useEventListClock()
+  return <EventProgress event={event} now={now} />
+}
+
+const EventProgress = ({
+  event,
+  now,
+}: {
+  event: EventWithTags
+  now: Dayjs
+}) => {
+  const progressDetails = calculateEventProgressDetails(event, now)
+  if (!progressDetails) return null
+
+  return (
+    <div className="grid gap-1.5 border-t border-border/60 pt-2 sm:gap-2 sm:pt-3">
+      <div className="flex items-center gap-2 text-xs text-foreground/70">
+        <span>{progressDetails.targetDate ?? progressDetails.label}</span>
+        <span aria-hidden="true">|</span>
+        <span className="shrink-0 tabular-nums">
+          {progressDetails.percent}%
+        </span>
+      </div>
+      <div
+        aria-label={progressDetails.description}
+        className="h-1 sm:h-1.5 w-full overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progressDetails.percent}
+      >
+        <div
+          aria-hidden="true"
+          className="h-full rounded-full bg-primary transition-[width] duration-500 motion-reduce:transition-none"
+          style={{ width: `${progressDetails.progress * 100}%` }}
+        />
+      </div>
+    </div>
   )
 }
 

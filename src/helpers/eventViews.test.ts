@@ -1,6 +1,10 @@
 import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
-import { filterUpcomingEvents, sortEventsByNextAnniversary } from './eventViews'
+import {
+  filterUpcomingEvents,
+  getNextEventViewTransition,
+  sortEventsByNextAnniversary,
+} from './eventViews'
 import type { EventWithTags } from '@/types/event'
 
 const createEvent = (id: string, datetime: string): EventWithTags => ({
@@ -107,5 +111,75 @@ describe('sortEventsByNextAnniversary', () => {
         ({ id }) => id,
       ),
     ).toEqual(['legacy'])
+  })
+})
+
+describe('getNextEventViewTransition', () => {
+  it('finds the next upcoming start or end boundary', () => {
+    const now = dayjs('2025-01-01T12:00:00.000Z')
+    const events = [
+      createEvent('later', '2025-01-01T14:00:00.000Z'),
+      {
+        ...createEvent('ongoing', '2025-01-01T11:00:00.000Z'),
+        endDate: '2025-01-01T13:00:00.000Z',
+      },
+    ]
+
+    expect(
+      getNextEventViewTransition(
+        events,
+        { upcoming: true },
+        now,
+      )?.toISOString(),
+    ).toBe('2025-01-01T13:00:00.000Z')
+  })
+
+  it('uses the day after a date-only end date as the exclusive boundary', () => {
+    const event = {
+      ...createEvent('date-only', '2025-01-01'),
+      dateOnly: true,
+      endDate: '2025-01-02',
+    }
+
+    expect(
+      getNextEventViewTransition(
+        [event],
+        { upcoming: true },
+        dayjs('2025-01-02T12:00:00'),
+      )?.format('YYYY-MM-DD HH:mm'),
+    ).toBe('2025-01-03 00:00')
+  })
+
+  it('finds the next enabled anniversary occurrence', () => {
+    const event: EventWithTags = {
+      ...createEvent('anniversary', '2000-01-01'),
+      dateOnly: true,
+      anniversaryProgressEnabled: true,
+    }
+
+    expect(
+      getNextEventViewTransition(
+        [event],
+        { anniversary: true },
+        dayjs('2025-12-31T12:00:00'),
+      )?.format('YYYY-MM-DD HH:mm'),
+    ).toBe('2026-01-01 00:00')
+  })
+
+  it('uses the event timezone for timed anniversary boundaries', () => {
+    const event: EventWithTags = {
+      ...createEvent('timed-anniversary', '2000-01-01T15:00:00.000Z'),
+      dateOnly: false,
+      timeZone: 'America/New_York',
+      anniversaryProgressEnabled: true,
+    }
+
+    expect(
+      getNextEventViewTransition(
+        [event],
+        { anniversary: true },
+        dayjs('2025-01-01T14:59:00.000Z'),
+      )?.toISOString(),
+    ).toBe('2025-01-01T15:00:00.000Z')
   })
 })

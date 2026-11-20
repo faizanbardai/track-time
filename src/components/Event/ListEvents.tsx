@@ -5,10 +5,8 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import dayjs from 'dayjs'
 import { SortableEventItem } from './SortableEventItem'
 import { MemoizedListEvent } from '@/components/Event/ListEvent'
-import {
-  EventListClock,
-  useEventListClock,
-} from '@/components/Event/EventListClock'
+import { EventListClock } from '@/components/Event/EventListClock'
+import { useEventListViewClock } from '@/components/Event/useEventListViewClock'
 import { useListEvents } from '@/components/Event/useListEvents'
 import { EventBottomBar } from '@/components/Event/EventBottomBar'
 import { EmptyEvents } from '@/components/Event/EmptyEvents'
@@ -21,7 +19,7 @@ import {
 import type { EventWithTags } from '@/types/event'
 import { getEventsForView } from '@/helpers/eventViews'
 import { cn } from '@/lib/utils'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { shouldRefreshSwipePreview } from './swipePreview'
 
 export const PreviewPanel = ({
@@ -39,21 +37,19 @@ export const PreviewPanel = ({
   useEffect(() => {
     if (shouldRefreshSwipePreview(isSettling)) setEvents(sourceEvents)
   }, [sourceEvents, isSettling])
-  const clockNow = useEventListClock()
+  const upcoming = activeTagId === UPCOMING_TAG_ID
+  const anniversary = activeTagId === ANNIVERSARY_TAG_ID
+  const viewNow = useEventListViewClock(events, { upcoming, anniversary })
   const [previewNow, setPreviewNow] = useState(() => dayjs())
 
   useEffect(() => {
     setPreviewNow(dayjs())
   }, [events])
 
-  const visibleEvents = getEventsForView(
-    events,
-    {
-      upcoming: activeTagId === UPCOMING_TAG_ID,
-      anniversary: activeTagId === ANNIVERSARY_TAG_ID,
-      sortMode,
-    },
-    clockNow,
+  const visibleEvents = useMemo(
+    () =>
+      getEventsForView(events, { upcoming, anniversary, sortMode }, viewNow),
+    [anniversary, events, sortMode, upcoming, viewNow],
   )
 
   return (

@@ -76,3 +76,47 @@ export const getEventsForView = (
     ? filteredEvents
     : sortEventsByStartDate(filteredEvents, sortMode)
 }
+
+export const getNextEventViewTransition = (
+  events: EventWithTags[],
+  {
+    upcoming = false,
+    anniversary = false,
+  }: { upcoming?: boolean; anniversary?: boolean },
+  now: Dayjs,
+) => {
+  const transitions: Dayjs[] = []
+
+  if (upcoming) {
+    for (const event of events) {
+      if (!event.endDate) {
+        const start = dayjs(event.datetime)
+        if (start.isAfter(now)) transitions.push(start)
+      }
+
+      if (event.endDate) {
+        const end = event.dateOnly
+          ? dayjs(event.endDate).add(1, 'day').startOf('day')
+          : dayjs(event.endDate)
+        if (end.isAfter(now)) transitions.push(end)
+      }
+    }
+  }
+
+  if (anniversary) {
+    for (const event of events) {
+      if (!hasAnniversaryEnabled(event)) continue
+      const occurrence = getNextAnniversaryOccurrence(
+        event,
+        now.add(1, 'millisecond'),
+      )
+      if (occurrence.isAfter(now)) transitions.push(occurrence)
+    }
+  }
+
+  return transitions.reduce<Dayjs | null>(
+    (next, transition) =>
+      !next || transition.isBefore(next) ? transition : next,
+    null,
+  )
+}

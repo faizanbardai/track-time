@@ -7,6 +7,7 @@ import { LiveCounter } from '@/components/Counter'
 import { calculateDuration } from '@/helpers/datetime/calculateTimeDiff'
 import { EventListClock } from '@/components/Event/EventListClock'
 import { PreviewPanel } from '@/components/Event/ListEvents'
+import { ANNIVERSARY_TAG_ID, UPCOMING_TAG_ID } from '@/helpers/indexedDB'
 import type { Event, EventWithTags } from '@/types/event'
 
 vi.mock('next/navigation', () => ({
@@ -189,5 +190,60 @@ describe('EventListClock', () => {
       </EventListClock>,
     )
     expect(screen.getByText(counterText('3s'))).toBeTruthy()
+  })
+
+  it('refreshes an upcoming preview when an event reaches its end boundary', () => {
+    const event: EventWithTags = {
+      ...createEvent(
+        'ending',
+        '2024-12-31T23:59:58.000Z',
+        '2025-01-01T00:00:02.000Z',
+      ),
+      tags: [],
+    }
+
+    render(
+      <EventListClock>
+        <PreviewPanel events={[event]} activeTagId={UPCOMING_TAG_ID} />
+      </EventListClock>,
+    )
+
+    expect(screen.getByText('Event ending')).toBeTruthy()
+
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+
+    expect(screen.queryByText('Event ending')).toBeNull()
+  })
+
+  it('reorders an anniversary preview when an occurrence passes', () => {
+    vi.setSystemTime(new Date(2024, 11, 31, 23, 59, 58))
+    const anniversary = (id: string, datetime: string): EventWithTags => ({
+      ...createEvent(id, datetime),
+      dateOnly: true,
+      anniversaryProgressEnabled: true,
+      tags: [],
+    })
+    const events = [
+      anniversary('new-year', '2000-01-01'),
+      anniversary('day-after', '2000-01-02'),
+    ]
+
+    render(
+      <EventListClock>
+        <PreviewPanel events={events} activeTagId={ANNIVERSARY_TAG_ID} />
+      </EventListClock>,
+    )
+
+    const titles = () =>
+      screen.getAllByText(/^Event /).map((element) => element.textContent)
+    expect(titles()).toEqual(['Event new-year', 'Event day-after'])
+
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+
+    expect(titles()).toEqual(['Event day-after', 'Event new-year'])
   })
 })
