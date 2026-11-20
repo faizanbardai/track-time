@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   KeyboardSensor,
   MouseSensor,
@@ -21,7 +21,7 @@ import { EventWithTags, Tag } from '../../types/event'
 import { useIndexedDB } from '@/components/providers/indexedDB'
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useActiveTag } from '@/components/Event/useActiveTag'
-import { useEventListClock } from '@/components/Event/EventListClock'
+import { useEventListViewClock } from '@/components/Event/useEventListViewClock'
 import { getEventsForView, sortEventsByStartDate } from '@/helpers/eventViews'
 import { useLoadingActions } from '@/components/providers/loading'
 
@@ -40,6 +40,8 @@ const ANNIVERSARY_TAG: Tag = {
   createdAt: '',
   updatedAt: '',
 }
+
+const EMPTY_EVENTS: EventWithTags[] = []
 
 export type EventSortMode = 'user' | 'asc' | 'desc'
 
@@ -68,7 +70,6 @@ const listEventsForTag = (tagId: string) => {
 export const useListEvents = () => {
   const { dbReady, dbError } = useIndexedDB()
   const { startLoading, stopLoading } = useLoadingActions()
-  const now = useEventListClock()
 
   const [eventsByTag, setEventsByTag] = useState<
     Record<string, EventWithTags[]>
@@ -85,16 +86,19 @@ export const useListEvents = () => {
     selectionReady,
     selectTag: persistActiveTag,
   } = useActiveTag(tags)
-  const loadedEvents = eventsByTag[activeTagId] ?? []
+  const loadedEvents = eventsByTag[activeTagId] ?? EMPTY_EVENTS
   const sortMode = sortModes[activeTagId] ?? defaultSortMode(activeTagId)
-  const events = getEventsForView(
-    loadedEvents,
-    {
-      upcoming: activeTagId === UPCOMING_TAG_ID,
-      anniversary: activeTagId === ANNIVERSARY_TAG_ID,
-      sortMode,
-    },
-    now,
+  const upcoming = activeTagId === UPCOMING_TAG_ID
+  const anniversary = activeTagId === ANNIVERSARY_TAG_ID
+  const viewNow = useEventListViewClock(loadedEvents, { upcoming, anniversary })
+  const events = useMemo(
+    () =>
+      getEventsForView(
+        loadedEvents,
+        { upcoming, anniversary, sortMode },
+        viewNow,
+      ),
+    [anniversary, loadedEvents, sortMode, upcoming, viewNow],
   )
 
   useEffect(() => {
