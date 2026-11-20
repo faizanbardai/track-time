@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.8.0...track-time-v0.9.0) (2026-11-20)
+
+
+### Features
+
+* add custom hook useEventListViewClock for managing event view transitions ([#90](https://github.com/faizanbardai/track-time/issues/90)) ([77b6f57](https://github.com/faizanbardai/track-time/commit/77b6f572489eecdbe18ffc8ad2dac9a04a940ad3))
+* update pre-commit hook to use lint-staged and enhance linting configuration ([5326f84](https://github.com/faizanbardai/track-time/commit/5326f8491a056640813c65dd70d119cfbc8273c7))
+
 ## [0.8.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.7.0...track-time-v0.8.0) (2026-11-19)
 
 
