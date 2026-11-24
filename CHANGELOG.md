@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/faizanbardai/track-time/compare/track-time-v0.9.0...track-time-v0.9.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* keep offline precache revisions stable ([39acd1b](https://github.com/faizanbardai/track-time/commit/39acd1b9dcf8c6f2b672e6e928fd94dfdef2380e))
+
 ## [0.9.0](https://github.com/faizanbardai/track-time/compare/track-time-v0.8.0...track-time-v0.9.0) (2026-11-20)
 
 
