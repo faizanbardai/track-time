@@ -25,12 +25,6 @@ const nextConfig: NextConfig = {
 const withSerwist = withSerwistInit({
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
-  additionalPrecacheEntries: ['/', '/event', '/tags', '/data', '/~offline'].map(
-    (url) => ({
-      url,
-      revision: crypto.randomUUID(),
-    }),
-  ),
   disable: process.env.NODE_ENV === 'development',
 })
 
