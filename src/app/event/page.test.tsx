@@ -180,14 +180,15 @@ describe('Event bottom bar', () => {
   })
 
   it('lets the user remove the default and select another tag', async () => {
+    await db.tags.put({ ...tag, id: 'personal', name: 'Personal' })
     navigation.params.set('tag', tag.id)
     render(<EventPage />)
     fireEvent.click(
       await screen.findByRole('button', { name: `Remove ${tag.name}` }),
     )
-    const input = screen.getByRole('combobox')
-    fireEvent.change(input, { target: { value: 'Personal' } })
-    fireEvent.keyDown(input, { key: 'Enter' })
+    fireEvent.click(screen.getByRole('button', { name: 'Choose tags' }))
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Personal' }))
+    fireEvent.click(screen.getByRole('button', { name: /Done/ }))
     expect(
       screen.queryByRole('button', { name: `Remove ${tag.name}` }),
     ).toBeNull()
